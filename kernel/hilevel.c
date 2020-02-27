@@ -62,7 +62,6 @@ void schedule( ctx_t* ctx ) {
               return;
             }
     }
-    return;
   }
   
   // else if( executing->pid == procTab[ 2 ].pid ) {
