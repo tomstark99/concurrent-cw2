@@ -52,15 +52,17 @@ void schedule( ctx_t* ctx ) {
 
               procTab[ MAX_PROCS - 1 ].status = STATUS_READY;             // update   execution status  of P_1
               procTab[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
+              return;
             }
             else{
               dispatch( ctx, &procTab[ i ], &procTab[ i + 1 ] );  // context switch P_2 -> P_1
 
               procTab[ i ].status = STATUS_READY;             // update   execution status  of P_2
               procTab[ i + 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
+              return;
             }
     }
-    
+    return;
   }
   
   // else if( executing->pid == procTab[ 2 ].pid ) {
