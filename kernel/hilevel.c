@@ -45,18 +45,22 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
 
 void schedule( ctx_t* ctx ) {
   for (int i = 0; i < MAX_PROCS; i++) {
-    if ( executing->pid == procTab[ MAX_PROCS - 1 ].pid ) {
-        dispatch( ctx, &procTab[ MAX_PROCS - 1 ], &procTab[ 0 ] );  // context switch P_1 -> P_2
+    if ( executing->pid == procTab[i].pid ) {
+      if ( executing->pid == procTab[ MAX_PROCS - 1 ].pid ) {
 
-        procTab[ MAX_PROCS - 1 ].status = STATUS_READY;             // update   execution status  of P_1
-        procTab[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
-      }
-      else{
-        dispatch( ctx, &procTab[ i ], &procTab[ i + 1 ] );  // context switch P_2 -> P_1
+              dispatch( ctx, &procTab[ MAX_PROCS - 1 ], &procTab[ 0 ] );  // context switch P_1 -> P_2
 
-        procTab[ i ].status = STATUS_READY;             // update   execution status  of P_2
-        procTab[ i + 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
-      }
+              procTab[ MAX_PROCS - 1 ].status = STATUS_READY;             // update   execution status  of P_1
+              procTab[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
+            }
+            else{
+              dispatch( ctx, &procTab[ i ], &procTab[ i + 1 ] );  // context switch P_2 -> P_1
+
+              procTab[ i ].status = STATUS_READY;             // update   execution status  of P_2
+              procTab[ i + 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
+            }
+    }
+    
   }
   
   // else if( executing->pid == procTab[ 2 ].pid ) {
@@ -91,7 +95,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
    */
 
   memset( &procTab[ 0 ], 0, sizeof( pcb_t ) ); // initialise 0-th PCB = P_1
-  procTab[ 0 ].pid      = 1;
+  procTab[ 0 ].pid      = 3;
   procTab[ 0 ].status   = STATUS_READY;
   procTab[ 0 ].tos      = ( uint32_t )( &tos_P3  );
   procTab[ 0 ].ctx.cpsr = 0x50;
@@ -99,7 +103,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
 
   memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_2
-  procTab[ 1 ].pid      = 2;
+  procTab[ 1 ].pid      = 4;
   procTab[ 1 ].status   = STATUS_READY;
   procTab[ 1 ].tos      = ( uint32_t )( &tos_P4  );
   procTab[ 1 ].ctx.cpsr = 0x50;
