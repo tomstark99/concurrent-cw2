@@ -199,10 +199,31 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
 
+    case 0x03 : { // fork
+      int child = -1;
+      for(int i = 0; i < MAX_PROCS; i++) {
+        if(procTab[i].status == STATUS_TERMINATED) {
+          child = i;
+          break;
+        }
+      }
+
+      pcb_t* CHILD_PROCESS;
+      memcpy(&procTab[child].ctx, ctx, sizeof(ctx_t));
+    }
+
     case 0x04 : {
       executing->status = STATUS_TERMINATED;
       schedule( ctx );
       break;
+    }
+
+    case 0x05 : { // exec
+
+    }
+
+    case 0x06 : { // kill
+
     }
 
     default   : { // 0x?? => unknown/unsupported
