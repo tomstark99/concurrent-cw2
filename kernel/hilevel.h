@@ -41,6 +41,7 @@
  */
 
 #define MAX_PROCS 3
+#define BASE_PRIORITY 1
 
 typedef int pid_t;
 
@@ -64,6 +65,8 @@ typedef struct {
   status_t status; // current status
   uint32_t    tos; // address of Top of Stack (ToS)
      ctx_t    ctx; // execution context
+     pid_t    age;
+     pid_t priority;
 } pcb_t;
 
 #endif
