@@ -43,15 +43,24 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   return;
 }
 
+int getChildProcess(){
+  for(int i = 0; i < MAX_PROCS; i++) {
+    if(procTab[i].status == STATUS_TERMINATED) {
+      return i;
+    }
+  }
+}
+
 int getPriority() {
   int priorityIndex;
-  int tempP = 0;
+  int maxP = 0;
   for(int i = 0; i < MAX_PROCS; i++) {
+    int tempP = 0;
     if(executing->pid != procTab[i].pid){
-      procTab[i].priority = procTab[i].priority + procTab[i].age;
+      tempP = procTab[i].priority + procTab[i].age;
     }
-    if(tempP <= procTab[i].priority && procTab[i].status != STATUS_TERMINATED) {
-      tempP = procTab[i].priority;
+    if(maxP <= tempP && procTab[i].status != STATUS_TERMINATED) {
+      maxP = tempP;
       priorityIndex = i;
     }
   }
@@ -71,6 +80,17 @@ void schedule( ctx_t* ctx ) {
   dispatch( ctx, executing, &procTab[ priority ] );
   executing->status = STATUS_READY;
   procTab[priority].status = STATUS_EXECUTING;
+
+    // PL011_putc( UART0, '[',      true );
+    // PL011_putc( UART0, '0' + executing->pid, true );
+    // PL011_putc( UART0, '-',      true );
+    // PL011_putc( UART0, 'R',      true );
+    // PL011_putc( UART0, ']',      true );
+    // PL011_putc( UART0, '[',      true );
+    // PL011_putc( UART0, '0' + procTab[priority].pid, true );
+    // PL011_putc( UART0, '-',      true );
+    // PL011_putc( UART0, 'E',      true );
+    // PL011_putc( UART0, ']',      true );
 }
   
   // else if( executing->pid == procTab[ 2 ].pid ) {
@@ -92,13 +112,13 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
    * representing valid (i.e., active) processes.
    */
 
-  PL011_putc( UART0, '[',      true );
+    PL011_putc( UART0, '[',      true );
     PL011_putc( UART0, 'R', true );
     PL011_putc( UART0, 'E',      true );
     PL011_putc( UART0, 'S',      true );
     PL011_putc( UART0, 'E', true );
     PL011_putc( UART0, 'T',      true );
-        PL011_putc( UART0, ']',      true );
+    PL011_putc( UART0, ']',      true );
 
   /* Automatically execute the user programs P1 and P2 by setting the fields
    * in two associated PCBs.  Note in each case that
@@ -115,21 +135,20 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   procTab[ 0 ].ctx.cpsr = 0x50;
   procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
+  procTab[ 0 ].priority = 1;
   procTab[ 0 ].age      = 0;
-  procTab[ 0 ].priority = BASE_PRIORITY;
   num_procs+=1;
 
   for (int i = 1; i < MAX_PROCS; i++) {
     memset( &procTab[ i ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_2
     procTab[ i ].pid      = i+1;
     procTab[ i ].status   = STATUS_TERMINATED;
-    procTab[ i ].tos      = ( uint32_t )( &tos_user  );
     procTab[ i ].ctx.cpsr = 0x50;
     procTab[ i ].ctx.pc   = ( uint32_t )( &main_console );
     procTab[ i ].ctx.sp   = procTab[ 0 ].tos - (i*0x00001000);
+    procTab[ i ].tos      = procTab[ i ].ctx.sp;
+    procTab[ i ].priority = 1;
     procTab[ i ].age      = 0;
-    procTab[ i ].priority = BASE_PRIORITY;
-    num_procs+=1;
   }
 
 
@@ -200,26 +219,47 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x03 : { // fork
-      int child = -1;
-      for(int i = 0; i < MAX_PROCS; i++) {
-        if(procTab[i].status == STATUS_TERMINATED) {
-          child = i;
-          break;
-        }
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'F', true );
+      PL011_putc( UART0, 'O', true );
+      PL011_putc( UART0, 'R', true );
+      PL011_putc( UART0, 'K', true );
+      PL011_putc( UART0, ']', true );
+      int childProcess = getChildProcess();
+      pcb_t * child = &procTab[childProcess];
+
+      if(child == NULL) {
+        ctx->gpr[ 0 ] = child->pid;
+        break;
       }
 
-      pcb_t* CHILD_PROCESS;
-      memcpy(&procTab[child].ctx, ctx, sizeof(ctx_t));
+
+      memcpy(&child->ctx, ctx, sizeof(ctx_t));
+
+      child->status = STATUS_CREATED;
+
+      child->ctx.gpr[ 0 ] = 0;
+      ctx->gpr[ 0 ] = child->pid;
+      break;
     }
 
-    case 0x04 : {
+    case 0x04 : { // exit
       executing->status = STATUS_TERMINATED;
       schedule( ctx );
       break;
     }
 
     case 0x05 : { // exec
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, 'X', true );
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, 'C', true );
+      PL011_putc( UART0, ']', true );
 
+      memcpy(&executing->ctx, ctx, sizeof(ctx_t));
+
+      break;
     }
 
     case 0x06 : { // kill
