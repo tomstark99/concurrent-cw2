@@ -264,6 +264,20 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x06 : { // kill
+
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'K', true );
+      PL011_putc( UART0, 'I', true );
+      PL011_putc( UART0, 'L', true );
+      PL011_putc( UART0, 'L', true );
+      PL011_putc( UART0, '0' + ctx->gpr[0], true );
+      PL011_putc( UART0, '-', true );
+      PL011_putc( UART0, '0' + ctx->gpr[1], true );
+      PL011_putc( UART0, ']', true );
+
+      procTab[ctx->gpr[0]].ctx.pc = ( uint32_t ) ( &main_console );
+      procTab[ctx->gpr[0]].status = STATUS_TERMINATED;
+
       break;
     }
 
