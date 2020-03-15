@@ -102,7 +102,7 @@ void schedule( ctx_t* ctx ) {
 
 extern void     main_console();
 extern uint32_t tos_user;
-// extern void     main_P4();
+extern void     main_P4();
 // extern uint32_t tos_P4;
 // extern void     main_P5();
 // extern uint32_t tos_P5;
@@ -250,6 +250,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x05 : { // exec
+
+      ctx->pc = ( uint32_t )( &main_P4 );
+
       PL011_putc( UART0, '[', true );
       PL011_putc( UART0, 'E', true );
       PL011_putc( UART0, 'X', true );
