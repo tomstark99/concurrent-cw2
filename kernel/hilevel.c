@@ -256,10 +256,10 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'E', true );
       PL011_putc( UART0, 'C', true );
       PL011_putc( UART0, '-', true );
-      PL011_putc( UART0, '0' + ctx->gpr[0], true );
-      PL011_putc( UART0, '0' + ctx->cpsr, true );
-      PL011_putc( UART0, '0' + ctx->pc, true );
-      PL011_putc( UART0, '0' + ctx->sp, true );
+      PL011_putc( UART0, ctx->gpr[0], true );
+      PL011_putc( UART0, ctx->cpsr, true );
+      PL011_putc( UART0, ctx->pc, true );
+      PL011_putc( UART0, ctx->sp, true );
       PL011_putc( UART0, ']', true );
 
 
