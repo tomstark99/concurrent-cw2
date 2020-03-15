@@ -276,7 +276,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, ']', true );
 
       for(int i = 0; i < MAX_PROCS; i++) {
-        if(procTab[i].pid == &ctx->gpr[0]) {
+        if(procTab[i].pid == ctx->gpr[0]) {
           PL011_putc( UART0, 'T', true );
           procTab[i].ctx.pc = (uint32_t) (&main_console);
           procTab[i].status = STATUS_TERMINATED;
