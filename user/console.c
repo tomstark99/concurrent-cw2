@@ -108,14 +108,17 @@ void main_console() {
       if( addr != NULL ) {
         if( 0 == fork() ) {
           exec( addr );
+        } else {
+          puts("error executing xd", strlen("error executing xd"));
         }
       }
       else {
         puts( "unknown program\n", 16 );
+        
       }
     } 
     else if( 0 == strcmp( cmd_argv[ 0 ], "terminate" ) ) {
-      puts(atoi(cmd_argv[ 1 ]),strlen(cmd_argv[1]));
+      puts(atoi(cmd_argv[ 1 ]),length(atoi(cmd_argv[1])));
       kill( atoi( cmd_argv[ 1 ] ), SIG_TERM );
     } 
     else {

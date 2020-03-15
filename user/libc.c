@@ -21,7 +21,6 @@ int  atoi( char* x        ) {
     r = s ? ( r * 10 ) - ( *p - '0' ) :
             ( r * 10 ) + ( *p - '0' ) ;
   }
-
   return r;
 }
 
