@@ -280,9 +280,10 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
           PL011_putc( UART0, 'TTT', true );
           procTab[i].ctx.pc = (uint32_t) (&main_console);
           procTab[i].status = STATUS_TERMINATED;
+          schedule(ctx);
         }
       }
-      schedule(ctx);
+      
       break;
     }
 
