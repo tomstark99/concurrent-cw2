@@ -109,7 +109,7 @@ void main_console() {
         if( 0 == fork() ) {
           exec( addr );
         } else {
-          puts("error executing xd", strlen("error executing xd"));
+          puts("error executing xd\n", strlen("error executing xd\n"));
         }
       }
       else {
@@ -118,6 +118,7 @@ void main_console() {
       }
     } 
     else if( 0 == strcmp( cmd_argv[ 0 ], "terminate" ) ) {
+      printf("%d\n", atoi(cmd_argv[1]));
       kill( atoi( cmd_argv[ 1 ] ), SIG_TERM );
     } 
     else {
