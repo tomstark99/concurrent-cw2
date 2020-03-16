@@ -108,9 +108,6 @@ void main_console() {
       if( addr != NULL ) {
         if( 0 == fork() ) {
           exec( addr );
-        } else {
-          puts("error executing xd\n", strlen("error executing xd\n"));
-        }
       }
       else {
         puts( "unknown program\n", 16 );
