@@ -102,7 +102,7 @@ void main_console() {
 
     // step 3: execute command.
 
-    if     ( 0 == strcmp( cmd_argv[ 0 ], "execute"   ) ) {
+    if( 0 == strcmp( cmd_argv[ 0 ], "execute" ) ) {
       void* addr = load( cmd_argv[ 1 ] );
 
       if( addr != NULL ) {
@@ -111,7 +111,6 @@ void main_console() {
         }
         else {
           puts( "unknown program\n", 16 );
-          
         }
       } 
     }
