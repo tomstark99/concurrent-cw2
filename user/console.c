@@ -108,12 +108,13 @@ void main_console() {
       if( addr != NULL ) {
         if( 0 == fork() ) {
           exec( addr );
-      }
-      else {
-        puts( "unknown program\n", 16 );
-        
-      }
-    } 
+        }
+        else {
+          puts( "unknown program\n", 16 );
+          
+        }
+      } 
+    }
     else if( 0 == strcmp( cmd_argv[ 0 ], "terminate" ) ) {
       //printf("%d\n", atoi(cmd_argv[1]));
       kill( atoi( cmd_argv[ 1 ] ), SIG_TERM );
@@ -122,6 +123,5 @@ void main_console() {
       puts( "unknown command\n", 16 );
     }
   }
-
   exit( EXIT_SUCCESS );
 }
