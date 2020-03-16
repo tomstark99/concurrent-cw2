@@ -108,6 +108,8 @@ void main_console() {
       if( addr != NULL ) {
         if( 0 == fork() ) {
           exec( addr );
+        } else {
+          puts( "FORK RETURNED TWICE\n", 20 );
         }
       }
       else {

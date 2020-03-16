@@ -80,17 +80,6 @@ void schedule( ctx_t* ctx ) {
   dispatch( ctx, executing, &procTab[ priority ] );
   executing->status = STATUS_READY;
   procTab[priority].status = STATUS_EXECUTING;
-
-    // PL011_putc( UART0, '[',      true );
-    // PL011_putc( UART0, '0' + executing->pid, true );
-    // PL011_putc( UART0, '-',      true );
-    // PL011_putc( UART0, 'R',      true );
-    // PL011_putc( UART0, ']',      true );
-    // PL011_putc( UART0, '[',      true );
-    // PL011_putc( UART0, '0' + procTab[priority].pid, true );
-    // PL011_putc( UART0, '-',      true );
-    // PL011_putc( UART0, 'E',      true );
-    // PL011_putc( UART0, ']',      true );
 }
   
   // else if( executing->pid == procTab[ 2 ].pid ) {
@@ -225,10 +214,17 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'R', true );
       PL011_putc( UART0, 'K', true );
       PL011_putc( UART0, ']', true );
+      
       int childProcess = getChildProcess();
       pcb_t * child = &procTab[childProcess];
 
       if(child == NULL) {
+        PL011_putc( UART0, '[', true );
+        PL011_putc( UART0, 'N', true );
+        PL011_putc( UART0, 'U', true );
+        PL011_putc( UART0, 'L', true );
+        PL011_putc( UART0, 'L', true );
+        PL011_putc( UART0, ']', true );
         ctx->gpr[ 0 ] = child->pid;
         break;
       }
@@ -239,7 +235,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       child->status = STATUS_CREATED;
 
       child->ctx.gpr[ 0 ] = 0;
-      ctx->gpr[ 0 ] = child->pid;
+      //ctx->gpr[ 0 ] = child->pid;
       break;
     }
 
@@ -259,6 +255,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, ']', true );
 
       ctx->pc = ctx->gpr[ 0 ];
+      schedule(ctx);
 
       break;
     }
