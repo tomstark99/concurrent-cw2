@@ -118,7 +118,7 @@ void main_console() {
       }
     } 
     else if( 0 == strcmp( cmd_argv[ 0 ], "terminate" ) ) {
-      printf("%d\n", atoi(cmd_argv[1]));
+      //printf("%d\n", atoi(cmd_argv[1]));
       kill( atoi( cmd_argv[ 1 ] ), SIG_TERM );
     } 
     else {
