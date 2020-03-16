@@ -109,10 +109,13 @@ void main_console() {
       void* addr = load( cmd_argv[ 1 ] );
       puts( "GET_2\n", 6 );
       if( addr != NULL ) {
+        puts( "GET_2.a\n", 8 );
         if( 0 == fork() ) {
           puts( "GET_3\n", 6 );
           exec( addr );
-        } else {
+        }
+        else {
+          puts( "GET_3.a\n", 8 );
           puts( "FORK RETURNED TWICE\n", 20 );
         }
       }
