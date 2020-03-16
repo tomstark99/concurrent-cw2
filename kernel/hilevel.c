@@ -17,7 +17,7 @@
  *   to execute.
  */
 
-pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL;
+pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL; int num_procs = 0;
 
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
@@ -43,21 +43,55 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   return;
 }
 
-void schedule( ctx_t* ctx ) {
-  for (int i = 0; i < MAX_PROCS; i++) {
-    if ( executing->pid == procTab[ MAX_PROCS - 1 ].pid ) {
-        dispatch( ctx, &procTab[ MAX_PROCS - 1 ], &procTab[ 0 ] );  // context switch P_1 -> P_2
-
-        procTab[ MAX_PROCS - 1 ].status = STATUS_READY;             // update   execution status  of P_1
-        procTab[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_2
-      }
-      else{
-        dispatch( ctx, &procTab[ i ], &procTab[ i + 1 ] );  // context switch P_2 -> P_1
-
-        procTab[ i ].status = STATUS_READY;             // update   execution status  of P_2
-        procTab[ i + 1 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
-      }
+int getChildProcess(){
+  for(int i = 0; i < MAX_PROCS; i++) {
+    if(procTab[i].status == STATUS_TERMINATED) {
+      return i;
+    }
   }
+}
+
+int getPriority() {
+  int priorityIndex;
+  int maxP = 0;
+  for(int i = 0; i < MAX_PROCS; i++) {
+    int tempP = 0;
+    if(executing->pid != procTab[i].pid){
+      tempP = procTab[i].priority + procTab[i].age;
+    }
+    if(maxP <= tempP && procTab[i].status != STATUS_TERMINATED) {
+      maxP = tempP;
+      priorityIndex = i;
+    }
+  }
+  for(int i = 0; i < MAX_PROCS; i++) {
+    if(procTab[i].status != STATUS_TERMINATED) {
+      procTab[i].age = procTab[i].age + 1;
+    }
+  }
+  procTab[priorityIndex].age = 0;
+
+  return priorityIndex;
+}
+
+void schedule( ctx_t* ctx ) {
+  int priority = getPriority();
+
+  dispatch( ctx, executing, &procTab[ priority ] );
+  executing->status = STATUS_READY;
+  procTab[priority].status = STATUS_EXECUTING;
+
+    // PL011_putc( UART0, '[',      true );
+    // PL011_putc( UART0, '0' + executing->pid, true );
+    // PL011_putc( UART0, '-',      true );
+    // PL011_putc( UART0, 'R',      true );
+    // PL011_putc( UART0, ']',      true );
+    // PL011_putc( UART0, '[',      true );
+    // PL011_putc( UART0, '0' + procTab[priority].pid, true );
+    // PL011_putc( UART0, '-',      true );
+    // PL011_putc( UART0, 'E',      true );
+    // PL011_putc( UART0, ']',      true );
+}
   
   // else if( executing->pid == procTab[ 2 ].pid ) {
   //   dispatch( ctx, &procTab[ 2 ], &procTab[ 0 ] );  // context switch P_2 -> P_1
@@ -65,22 +99,26 @@ void schedule( ctx_t* ctx ) {
   //   procTab[ 2 ].status = STATUS_READY;             // update   execution status  of P_2
   //   procTab[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
   // }
-  return;
-}
 
-extern void     main_P3();
-extern uint32_t tos_P3;
+extern void     main_console();
+extern uint32_t tos_user;
 extern void     main_P4();
-extern uint32_t tos_P4;
+// extern uint32_t tos_P4;
+// extern void     main_P5();
+// extern uint32_t tos_P5;
 
 void hilevel_handler_rst( ctx_t* ctx              ) {
   /* Invalidate all entries in the process table, so it's clear they are not
    * representing valid (i.e., active) processes.
    */
 
-  for( int i = 0; i < MAX_PROCS; i++ ) {
-    procTab[ i ].status = STATUS_INVALID;
-  }
+    PL011_putc( UART0, '[',      true );
+    PL011_putc( UART0, 'R', true );
+    PL011_putc( UART0, 'E',      true );
+    PL011_putc( UART0, 'S',      true );
+    PL011_putc( UART0, 'E', true );
+    PL011_putc( UART0, 'T',      true );
+    PL011_putc( UART0, ']',      true );
 
   /* Automatically execute the user programs P1 and P2 by setting the fields
    * in two associated PCBs.  Note in each case that
@@ -93,26 +131,26 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   memset( &procTab[ 0 ], 0, sizeof( pcb_t ) ); // initialise 0-th PCB = P_1
   procTab[ 0 ].pid      = 1;
   procTab[ 0 ].status   = STATUS_READY;
-  procTab[ 0 ].tos      = ( uint32_t )( &tos_P3  );
+  procTab[ 0 ].tos      = ( uint32_t )( &tos_user  );
   procTab[ 0 ].ctx.cpsr = 0x50;
-  procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_P3 );
+  procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_console );
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;
+  procTab[ 0 ].priority = 1;
+  procTab[ 0 ].age      = 0;
+  num_procs+=1;
 
-  memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_2
-  procTab[ 1 ].pid      = 2;
-  procTab[ 1 ].status   = STATUS_READY;
-  procTab[ 1 ].tos      = ( uint32_t )( &tos_P4  );
-  procTab[ 1 ].ctx.cpsr = 0x50;
-  procTab[ 1 ].ctx.pc   = ( uint32_t )( &main_P4 );
-  procTab[ 1 ].ctx.sp   = procTab[ 1 ].tos;
+  for (int i = 1; i < MAX_PROCS; i++) {
+    memset( &procTab[ i ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_2
+    procTab[ i ].pid      = i+1;
+    procTab[ i ].status   = STATUS_TERMINATED;
+    procTab[ i ].ctx.cpsr = 0x50;
+    procTab[ i ].ctx.pc   = ( uint32_t )( &main_console );
+    procTab[ i ].ctx.sp   = procTab[ 0 ].tos - (i*0x00001000);
+    procTab[ i ].tos      = procTab[ i ].ctx.sp;
+    procTab[ i ].priority = 1;
+    procTab[ i ].age      = 0;
+  }
 
-  // memset( &procTab[ 2 ], 0, sizeof( pcb_t ) ); // initialise 1-st PCB = P_2
-  // procTab[ 2 ].pid      = 3;
-  // procTab[ 2 ].status   = STATUS_READY;
-  // procTab[ 2 ].tos      = ( uint32_t )( &tos_P3  );
-  // procTab[ 2 ].ctx.cpsr = 0x50;
-  // procTab[ 2 ].ctx.pc   = ( uint32_t )( &main_P3 );
-  // procTab[ 2 ].ctx.sp   = procTab[ 2 ].tos;
 
   /* Once the PCBs are initialised, we arbitrarily select the 0-th PCB to be
    * executed: there is no need to preserve the execution context, since it
@@ -177,6 +215,55 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       }
       ctx->gpr[ 0 ] = n;
 
+      break;
+    }
+
+    case 0x03 : { // fork
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'F', true );
+      PL011_putc( UART0, 'O', true );
+      PL011_putc( UART0, 'R', true );
+      PL011_putc( UART0, 'K', true );
+      PL011_putc( UART0, ']', true );
+      int childProcess = getChildProcess();
+      pcb_t * child = &procTab[childProcess];
+
+      if(child == NULL) {
+        ctx->gpr[ 0 ] = child->pid;
+        break;
+      }
+
+
+      memcpy(&child->ctx, ctx, sizeof(ctx_t));
+
+      child->status = STATUS_CREATED;
+
+      child->ctx.gpr[ 0 ] = 0;
+      ctx->gpr[ 0 ] = child->pid;
+      break;
+    }
+
+    case 0x04 : { // exit
+      executing->status = STATUS_TERMINATED;
+      schedule( ctx );
+      break;
+    }
+
+    case 0x05 : { // exec
+
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, 'X', true );
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, 'C', true );
+      PL011_putc( UART0, ']', true );
+
+      ctx->pc = ctx->gpr[ 0 ];
+
+      break;
+    }
+
+    case 0x06 : { // kill
       break;
     }
 
