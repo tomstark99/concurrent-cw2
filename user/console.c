@@ -39,7 +39,6 @@ extern void main_P4();
 extern void main_P5(); 
 
 void* load( char* x ) {
-  puts( "GET_1.a\n", 8 );
   if     ( 0 == strcmp( x, "P3" ) ) {
     return &main_P3;
   }
@@ -49,7 +48,6 @@ void* load( char* x ) {
   else if( 0 == strcmp( x, "P5" ) ) {
     return &main_P5;
   }
-  puts( "GET_1.b\n", 8 );
   return NULL;
 }
 
@@ -92,47 +90,35 @@ void main_console() {
     // step 1: write command prompt, then read command.
 
     puts( "console$ ", strlen("console$ ") ); gets( cmd, MAX_CMD_CHARS );
-    puts( "GET_1\n", 6 );
     // step 2: tokenize command.
 
     int cmd_argc = 0; char* cmd_argv[ MAX_CMD_ARGS ];
 
     for( char* t = strtok( cmd, " " ); t != NULL; t = strtok( NULL, " " ) ) {
-      puts( "GET_1.f\n", 8 );
       cmd_argv[ cmd_argc++ ] = t;
     }
 
     // step 3: execute command.
 
     if     ( 0 == strcmp( cmd_argv[ 0 ], "execute"   ) ) {
-      puts( "GET_1.2\n", 8 );
       void* addr = load( cmd_argv[ 1 ] );
-      puts( "GET_2\n", 6 );
       if( addr != NULL ) {
-        puts( "GET_2.a\n", 8 );
         if( 0 == fork() ) {
-          puts( "GET_3\n", 6 );
           exec( addr );
         }
         else {
-          puts( "GET_3.a\n", 8 );
-          puts( "FORK RETURNED TWICE\n", 20 );
         }
       }
       else {
-        puts( "GET_4\n", 6 );
         puts( "unknown program\n", 16 );
       }
     } 
     else if( 0 == strcmp( cmd_argv[ 0 ], "terminate" ) ) {
-      puts( "GET_5\n", 6 );
       kill( atoi( cmd_argv[ 1 ] ), SIG_TERM );
     } 
     else {
-      puts( "GET_6\n", 6 );
       puts( "unknown command\n", 16 );
     }
   }
-  puts( "GET_7\n", 6 );
   exit( EXIT_SUCCESS );
 }

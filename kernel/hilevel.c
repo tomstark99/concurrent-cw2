@@ -82,16 +82,9 @@ void schedule( ctx_t* ctx ) {
   procTab[priority].status = STATUS_EXECUTING;
 }
   
-  // else if( executing->pid == procTab[ 2 ].pid ) {
-  //   dispatch( ctx, &procTab[ 2 ], &procTab[ 0 ] );  // context switch P_2 -> P_1
-
-  //   procTab[ 2 ].status = STATUS_READY;             // update   execution status  of P_2
-  //   procTab[ 0 ].status = STATUS_EXECUTING;         // update   execution status  of P_1
-  // }
-
 extern void     main_console();
 extern uint32_t tos_user;
-extern void     main_P4();
+// extern void     main_P4();
 // extern uint32_t tos_P4;
 // extern void     main_P5();
 // extern uint32_t tos_P5;
@@ -235,7 +228,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       child->status = STATUS_CREATED;
 
       child->ctx.gpr[ 0 ] = 0;
-      //ctx->gpr[ 0 ] = child->pid;
+      PL011_putc( UART0, 'X', true );
+      ctx->gpr[ 0 ] = child->pid;
       break;
     }
 
@@ -261,6 +255,15 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x06 : { // kill
+      for (int i = 0; i < MAX_PROCS; i++){
+        PL011_putc( UART0, '0' + procTab[i].pid, true );
+        PL011_putc( UART0, '0' + ctx->gpr[1], true );
+        if(procTab[ i ].pid == ctx->gpr[ 0 ]) {
+          procTab[ i ].status = STATUS_TERMINATED;
+          procTab[ i ].ctx.pc   = ( uint32_t )( &main_console );
+          procTab[ i ].ctx.sp   = procTab[ 0 ].tos - (i*0x00001000);
+        }
+      }
       break;
     }
 
