@@ -12,6 +12,7 @@ void runPhilosophers() {
     for (int i = 0; i < NUM_PHILOS; i++) {
         aux = fork();
         if(aux != 0) {
+            puts( "parent\n", 7 );
         }
         else if( aux == 0) {
             exec(&main_PhilosopherProcess);
