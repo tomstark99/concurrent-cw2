@@ -43,12 +43,13 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   return;
 }
 
-int getChildProcess(){
+pcb_t* getChildProcess(){
   for(int i = 0; i < MAX_PROCS; i++) {
     if(procTab[i].status == STATUS_TERMINATED) {
-      return i;
+      return &procTab[i];
     }
   }
+  return NULL;
 }
 
 int getPriority() {
@@ -126,7 +127,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     procTab[ i ].pid      = i+1;
     procTab[ i ].status   = STATUS_TERMINATED;
     procTab[ i ].ctx.cpsr = 0x50;
-    procTab[ i ].ctx.pc   = ( uint32_t )( &main_console );
+    //procTab[ i ].ctx.pc   = ( uint32_t )( &main_console );
     procTab[ i ].ctx.sp   = procTab[ 0 ].tos - (i*0x00001000);
     procTab[ i ].tos      = procTab[ i ].ctx.sp;
     procTab[ i ].priority = 1;
@@ -208,8 +209,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'K', true );
       PL011_putc( UART0, ']', true );
       
-      int childProcess = getChildProcess();
-      pcb_t * child = &procTab[childProcess];
+      pcb_t * child = getChildProcess();
 
       if(child == NULL) {
         PL011_putc( UART0, '[', true );
@@ -218,7 +218,6 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
         PL011_putc( UART0, 'L', true );
         PL011_putc( UART0, 'L', true );
         PL011_putc( UART0, ']', true );
-        ctx->gpr[ 0 ] = child->pid;
         break;
       }
 
@@ -227,13 +226,34 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
       child->status = STATUS_CREATED;
 
+      uint32_t offset = (uint32_t) executing->tos - ctx->sp;
+      memcpy((void*) (child->tos - 0x00001000), (void*) (executing->tos - 0x00001000), 0x00001000);
+      child->ctx.sp = child->tos - offset;
+
+      // possible solution to scheduling the new process correctly?
+      // for(int i = 0; i < MAX_PROCS; i++) {
+      //   if(procTab[i].status != STATUS_TERMINATED) {
+      //     procTab[i].age = procTab[i].age + 1;
+      //   }
+      // }
+      child->age = executing->age;
+
+      num_procs += 1;
+
       child->ctx.gpr[ 0 ] = 0;
-      PL011_putc( UART0, 'X', true );
       ctx->gpr[ 0 ] = child->pid;
       break;
     }
 
     case 0x04 : { // exit
+
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'E', true );
+      PL011_putc( UART0, 'X', true );
+      PL011_putc( UART0, 'I', true );
+      PL011_putc( UART0, 'T', true );
+      PL011_putc( UART0, ']', true );
+
       executing->status = STATUS_TERMINATED;
       schedule( ctx );
       break;
@@ -249,21 +269,31 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, ']', true );
 
       ctx->pc = ctx->gpr[ 0 ];
-      schedule(ctx);
+      //schedule(ctx);
 
       break;
     }
 
     case 0x06 : { // kill
-      for (int i = 0; i < MAX_PROCS; i++){
-        PL011_putc( UART0, '0' + procTab[i].pid, true );
-        PL011_putc( UART0, '0' + ctx->gpr[1], true );
-        if(procTab[ i ].pid == ctx->gpr[ 0 ]) {
-          procTab[ i ].status = STATUS_TERMINATED;
-          procTab[ i ].ctx.pc   = ( uint32_t )( &main_console );
-          procTab[ i ].ctx.sp   = procTab[ 0 ].tos - (i*0x00001000);
-        }
+
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'K', true );
+      PL011_putc( UART0, 'I', true );
+      PL011_putc( UART0, 'L', true );
+      PL011_putc( UART0, 'L', true );
+      PL011_putc( UART0, ']', true );
+
+      uint32_t kill = (uint32_t) (ctx->gpr[ 0 ]) - 1;
+      if(procTab[ kill ].status != STATUS_TERMINATED) {
+        procTab[ kill ].status = STATUS_TERMINATED;
+        procTab[ kill ].ctx.pc = ( uint32_t )( &main_console );
+        procTab[ kill ].ctx.sp = procTab[ 0 ].tos - (kill*0x00001000);
+        ctx->gpr[0] = 0;
       }
+      else {
+        ctx->gpr[0] = -1;
+      }
+      num_procs -= 1;
       break;
     }
 

@@ -40,8 +40,8 @@
  * - a type that captures a process PCB.
  */
 
-#define MAX_PROCS 5
-#define BASE_PRIORITY 1
+#define MAX_PROCS 30
+#define BASE_PRIORITY 1 
 
 typedef int pid_t;
 
