@@ -70,7 +70,7 @@ extern void exit(       int   x );
 // perform exec, i.e., start executing program at address x
 extern void exec( const void* x );
 // perform an interrupt to check a philosophers chopsticks x is the request type
-extern void phil( int x );
+extern int phil( int x );
 // for process identified by pid, send signal of x
 extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to x

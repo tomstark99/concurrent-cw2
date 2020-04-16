@@ -9,6 +9,7 @@
 
 #include "libc.h"
 #include "philosopherProcess.h"
+#include "mutex.h"
 
 #define NUM_PHIL 16
 
@@ -16,10 +17,14 @@
 #define TAKEN 1
 
 typedef struct {
-     pid_t    pid; // Process IDentifier (PID)
-       int status; // current status
-       int   left; // left fork
-       int  right; // right fork
+       pid_t   pid; // Process IDentifier (PID)
+       int     status; // current status
+       mutex_t*  left; // left fork
+       mutex_t*  right; // right fork
 } phil_t;
+
+extern mutex_t forks[NUM_PHIL];
+
+extern phil_t philosophers[NUM_PHIL];
 
 #endif
