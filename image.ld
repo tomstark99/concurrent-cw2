@@ -23,6 +23,6 @@ SECTIONS {
   .       = . + 0x00001000;  
   tos_svc = .;
     /* allocate stack for console    */
-  .       = . + 0x00005000;
+  .       = . + 0x00020000;
   tos_user  = .;
 }

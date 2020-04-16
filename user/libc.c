@@ -123,6 +123,17 @@ void exec( const void* x ) {
   return;
 }
 
+int phil( int x ) {
+  int r;
+  asm volatile( "mov r0, %2 \n" // assign r0 =  x
+                "svc %1     \n" // make system call SYS_PHIL
+                "mov %0, r0 \n" // assign r = r0
+              : "=r" (r) 
+              : "I" (SYS_PHIL), "r" (x)
+              : "r0" );
+  return r;
+}
+
 int  kill( int pid, int x ) {
   int r;
 

@@ -8,19 +8,18 @@
 #include "PL011.h"
 
 #include "libc.h"
+#include "philosopherProcess.h"
 
-#define NUM_PHILOS 16
+#define NUM_PHIL 16
 
-typedef enum {
-    FREE,
-    TAKEN
-} status_t;
+#define FREE 0
+#define TAKEN 1
 
 typedef struct {
      pid_t    pid; // Process IDentifier (PID)
-  status_t status; // current status
+       int status; // current status
        int   left; // left fork
        int  right; // right fork
-} pcb_t;
+} phil_t;
 
 #endif

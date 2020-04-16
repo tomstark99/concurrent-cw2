@@ -9,7 +9,7 @@ void initialiseMutexes() {
 
 void runPhilosophers() {
     int aux = 0;
-    for (int i = 0; i < NUM_PHILOS; i++) {
+    for (int i = 0; i < NUM_PHIL; i++) {
         aux = fork();
         if(aux != 0) {
             puts( "parent\n", 7 );
@@ -18,11 +18,11 @@ void runPhilosophers() {
             exec(&main_PhilosopherProcess);
         }
     }
-    exit(EXIT_SUCCESS); 
+    
 }
 
 void main_Philosophers() {
     initialiseMutexes();
     runPhilosophers();
-    
+    exit(EXIT_SUCCESS); 
 }

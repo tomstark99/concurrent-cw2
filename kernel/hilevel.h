@@ -26,6 +26,7 @@
 
 #include "lolevel.h"
 #include     "int.h"
+#include "philosophers.h"
 
 /* The kernel source code is made simpler and more consistent by using
  * some human-readable type definitions:
@@ -40,7 +41,7 @@
  * - a type that captures a process PCB.
  */
 
-
+#define MAX_PROCS 32
 #define BASE_PRIORITY 1 
 
 typedef int pid_t;

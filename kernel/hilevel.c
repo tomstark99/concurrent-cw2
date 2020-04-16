@@ -221,22 +221,14 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
         break;
       }
 
-
       memcpy(&child->ctx, ctx, sizeof(ctx_t));
-
-      child->status = STATUS_CREATED;
 
       uint32_t offset = (uint32_t) executing->tos - ctx->sp;
       memcpy((void*) (child->tos - 0x00001000), (void*) (executing->tos - 0x00001000), 0x00001000);
-      child->ctx.sp = child->tos - offset;
 
-      // possible solution to scheduling the new process correctly?
-      // for(int i = 0; i < MAX_PROCS; i++) {
-      //   if(procTab[i].status != STATUS_TERMINATED) {
-      //     procTab[i].age = procTab[i].age + 1;
-      //   }
-      // }
-      child->age = executing->age;
+      child->status = STATUS_CREATED;
+      child->ctx.sp = child->tos - offset;
+      child->age = 0;
 
       num_procs += 1;
 
@@ -268,6 +260,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'C', true );
       PL011_putc( UART0, ']', true );
 
+      ctx->sp = executing->tos;
       ctx->pc = ctx->gpr[ 0 ];
       //schedule(ctx);
 
@@ -295,6 +288,22 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       }
       num_procs -= 1;
       break;
+    }
+
+    case 0x08 : { // philosopher interrupt
+      uint32_t request = ( uint32_t ) (ctx->gpr[ 0 ]);
+      int brake = 0;
+
+      if(request==1) {
+        for (int i = 0; i < NUM_PHIL; i++) {
+          puts("xd\n", 3);
+          ctx->gpr[ 0 ] = i;
+          break;
+        }
+      } else {
+        ctx->gpr[ 0 ] = FAIL;
+        break;
+      }
     }
 
     default   : { // 0x?? => unknown/unsupported
