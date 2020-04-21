@@ -153,6 +153,8 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   GICC0->CTLR         = 0x00000001; // enable GIC interface
   GICD0->CTLR         = 0x00000001; // enable GIC distributor
 
+  srand2(TIMER0->Timer1Value);
+
   int_enable_irq();
 
   return;
@@ -291,19 +293,8 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x08 : { // philosopher interrupt
-      uint32_t request = ( uint32_t ) (ctx->gpr[ 0 ]);
-      int brake = 0;
-
-      if(request==1) {
-        for (int i = 0; i < NUM_PHIL; i++) {
-          puts("xd\n", 3);
-          ctx->gpr[ 0 ] = i;
-          break;
-        }
-      } else {
-        ctx->gpr[ 0 ] = FAIL;
-        break;
-      }
+      ctx->gpr[ 0 ] = executing->pid;
+      break;
     }
 
     default   : { // 0x?? => unknown/unsupported

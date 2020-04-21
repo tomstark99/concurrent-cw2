@@ -16,6 +16,8 @@
 
 typedef int pid_t;
 
+int next;
+
 /* The definitions below capture symbolic constants within these classes:
  *
  * 1. system call identifiers (i.e., the constant used by a system call
@@ -62,6 +64,12 @@ extern void yield();
 extern int write( int fd, const void* x, size_t n );
 // read  n bytes into x from the file descriptor fd; return bytes read
 extern int  read( int fd,       void* x, size_t n );
+// wait for given counter
+
+extern int rand2();
+void srand2(unsigned int seed);
+
+extern void wait( unsigned int c );
 
 // perform fork, returning 0 iff. child or > 0 iff. parent process
 extern int  fork();
@@ -70,7 +78,7 @@ extern void exit(       int   x );
 // perform exec, i.e., start executing program at address x
 extern void exec( const void* x );
 // perform an interrupt to check a philosophers chopsticks x is the request type
-extern int phil( int x );
+extern int phil();
 // for process identified by pid, send signal of x
 extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to x

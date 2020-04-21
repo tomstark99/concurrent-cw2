@@ -8,23 +8,29 @@
 #include "PL011.h"
 
 #include "libc.h"
-#include "philosopherProcess.h"
-#include "mutex.h"
 
 #define NUM_PHIL 16
 
 #define FREE 0
-#define TAKEN 1
+//#define TAKEN 1
+
+#define SUCCESS 10
+#define FAIL -1
+
+#define THINKING 2
+#define EATING 3
+
+typedef uint32_t sem_t;
 
 typedef struct {
        pid_t   pid; // Process IDentifier (PID)
        int     status; // current status
-       mutex_t*  left; // left fork
-       mutex_t*  right; // right fork
+       sem_t*  left; // left fork
+       sem_t*  right; // right fork
 } phil_t;
 
-extern mutex_t forks[NUM_PHIL];
-
-extern phil_t philosophers[NUM_PHIL];
+//sem_t waiter = FREE;
+sem_t forks[NUM_PHIL];
+phil_t philosophers[NUM_PHIL];
 
 #endif

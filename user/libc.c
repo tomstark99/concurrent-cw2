@@ -123,15 +123,56 @@ void exec( const void* x ) {
   return;
 }
 
-int phil( int x ) {
+int phil() {
   int r;
-  asm volatile( "mov r0, %2 \n" // assign r0 =  x
-                "svc %1     \n" // make system call SYS_PHIL
+  asm volatile( "svc %1     \n" // make system call SYS_PHIL
                 "mov %0, r0 \n" // assign r = r0
               : "=r" (r) 
-              : "I" (SYS_PHIL), "r" (x)
+              : "I" (SYS_PHIL)
               : "r0" );
   return r;
+}
+
+int rand2( void ) {
+  next = next * 234503515245 + 123456;
+  return (unsigned int) next % 268435456;
+}
+
+void srand2(unsigned int seed) {
+  next = seed;
+  return;
+}
+
+void wait(unsigned int c) {
+  for(int i = 0; i < c; i++) {
+    asm volatile( "nop" );
+  }
+}
+
+void sem_wait( void *s ) {
+
+  asm volatile( "ldrex r1, [r0]     \n" // s’ = MEM[&s] 
+                "cmp r1, #0         \n" // s’ ?= 0 
+                "beq sem_wait       \n" // if s’ == 0, retry 
+                "sub r1, r1, #1     \n" // s’ = s’ - 1 
+                "strex r2, r1, [r0] \n" // r <= MEM[&s] = s’ 
+                "cmp r2, #0         \n" // r ?= 0 
+                "bne sem_wait       \n" // if r != 0, retry 
+                "dmb                \n" // memory barrier 
+                "bx lr              \n");
+  return;
+}
+
+void sem_post( void *s ) {
+
+  asm volatile( "ldrex r1, [r0]     \n" // s’ = MEM[&s]
+                "add r1, r1, #1     \n" // s’ = s’ + 1 
+                "strex r2, r1, [r0] \n" // r <= MEM[&s] = s’ 
+                "cmp r2, #0         \n" // r ?= 0 
+                "bne sem_post       \n" // if r != 0, retry 
+                "dmb                \n" // memory barrier 
+                "bx lr              \n");
+  return;
 }
 
 int  kill( int pid, int x ) {

@@ -10,10 +10,6 @@
 #include "libc.h"
 #include "philosophers.h"
 
-#define FAIL 100
-
-#define THINKING 0
-#define EATING 1
 #endif
 
 
