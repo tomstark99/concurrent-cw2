@@ -3,8 +3,8 @@
 
 @ lock_mutex
 @ Declare for use from C as extern void lock_mutex(void * mutex);
-    .global lock_mutex
-lock_mutex:
+    .global mutex_lock
+mutex_lock:
     LDR     r1, =locked
 1:  LDREX   r2, [r0]
     CMP     r2, r1        @ Test if mutex is locked or unlocked
@@ -23,8 +23,8 @@ lock_mutex:
 
 @ unlock_mutex
 @ Declare for use from C as extern void unlock_mutex(void * mutex);
-    .global unlock_mutex
-unlock_mutex:
+    .global mutex_unlock
+mutex_unlock:
     LDR     r1, =unlocked
     DMB                   @ Required before releasing protected resource
     STR     r1, [r0]      @ Unlock mutex

@@ -1,11 +1,13 @@
 #include "philosophers.h"
 
-extern void main_PhilosopherProcess();
+extern void main_PhilosopherMutex();
+extern void main_PhilosopherSemaphore();
 //const uint32_t locked = 0;
 
 char s[10];
 
 void initialiseMutexes() {
+    waiter = FREE;
     for (int i = 0; i < NUM_PHIL; i++) {
         forks[i] = FREE;
     }
@@ -13,6 +15,7 @@ void initialiseMutexes() {
 
 void runPhilosophers() {
     int aux = 0;
+    global_waiter = &waiter;
     for (int i = 0; i < NUM_PHIL; i++) {
         philosophers[i].left = &forks[(i) % NUM_PHIL];
         philosophers[i].right = &forks[(i + 1) % NUM_PHIL];
@@ -24,58 +27,9 @@ void runPhilosophers() {
         }
         else if( aux == 0 ) {
 
-            exec(&main_PhilosopherProcess);
-
-            // while(1) {
-
-            //     for(int j = 0; j < 3; j++) {
-            //         wait(rand2());
-            //     }
-
-            //     sem_wait(waiter);
-
-            //     itoa(s, i);
-            //     write(STDOUT_FILENO, "\n\nphilosopher ", 14);
-            //     write(STDOUT_FILENO, s, strlen(s));
-            //     write(STDOUT_FILENO, " has the waiter\n\n", 17);
-
-            //     if(*philosophers[i].left == FREE && *philosophers[i].right == FREE) {
-
-            //         sem_wait(philosophers[i%NUM_PHIL].left);
-            //         sem_wait(philosophers[i%NUM_PHIL].right);
-
-            //         itoa(s, i);
-            //         write(STDOUT_FILENO, "\n\nphilosopher ", 14);
-            //         write(STDOUT_FILENO, s, strlen(s));
-            //         write(STDOUT_FILENO, " picked up their forks and is eating\n\n", 38);
-
-            //         for(int j = 0; j < 3; j++) {
-            //             wait(rand2());
-            //         }
-
-            //         sem_post(philosophers[i%NUM_PHIL].left);
-            //         sem_post(philosophers[i%NUM_PHIL].right);
-
-            //         write(STDOUT_FILENO, "\n\nphilosopher ", 14);
-            //         write(STDOUT_FILENO, s, strlen(s));
-            //         write(STDOUT_FILENO, " finished and replaced their forks\n\n", 36);
-
-            //         sem_post(waiter);
-
-            //         itoa(s, i);
-            //         write(STDOUT_FILENO, "\n\nphilosopher ", 14);
-            //         write(STDOUT_FILENO, s, strlen(s));
-            //         write(STDOUT_FILENO, " released the waiter\n\n", 22);
-            //     }
-            //     else {
-            //         sem_post(waiter);
-
-            //         itoa(s, i);
-            //         write(STDOUT_FILENO, "\n\nphilosopher ", 14);
-            //         write(STDOUT_FILENO, s, strlen(s));
-            //         write(STDOUT_FILENO, " released the waiter (couldn't eat)\n\n", 37);
-            //     }
-            // }
+            //exec(&main_PhilosopherMutex);
+            exec(&main_PhilosopherSemaphore);
+            
         }
     }
 }

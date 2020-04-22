@@ -1,5 +1,5 @@
-#ifndef __philosopherProcess_H
-#define __philosopherProcess_H
+#ifndef __philosopherSemaphore_H
+#define __philosopherSemaphore_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -8,7 +8,6 @@
 #include "PL011.h"
 
 #include "libc.h"
-#include "philosophers.h"
 
 #endif
 
