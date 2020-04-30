@@ -26,6 +26,7 @@
 
 #include "lolevel.h"
 #include     "int.h"
+#include "philosophers.h"
 
 /* The kernel source code is made simpler and more consistent by using
  * some human-readable type definitions:
@@ -40,19 +41,19 @@
  * - a type that captures a process PCB.
  */
 
-#define MAX_PROCS 3
-#define BASE_PRIORITY 1
+#define MAX_PROCS 32 // 32 seemed like a good number for max processes e.g. because of the IPC mechanism showcase taking up 16 giving a comfortable amount of processes left for different programs
+#define BASE_PRIORITY 1 // defined but not used
 
 typedef int pid_t;
 
 typedef enum {
   STATUS_INVALID,
 
-  STATUS_CREATED,
-  STATUS_TERMINATED,
+  STATUS_CREATED, // child process is set to this when fork is called
+  STATUS_TERMINATED, // process initially set to this when created in rst
 
-  STATUS_READY,
-  STATUS_EXECUTING,
+  STATUS_READY, // process status when has been created and after it has been executed it becomes ready
+  STATUS_EXECUTING, // only one process should have this at any one time, when it is currently executing
   STATUS_WAITING
 } status_t;
 
@@ -65,7 +66,7 @@ typedef struct {
   status_t status; // current status
   uint32_t    tos; // address of Top of Stack (ToS)
      ctx_t    ctx; // execution context
-     pid_t    age;
+     pid_t    age;    // I added age and priority to the pcb struct so they could be easily accessed from within the kernel for the scheduling of the processes
      pid_t priority;
 } pcb_t;
 

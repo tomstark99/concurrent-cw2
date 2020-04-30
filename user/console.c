@@ -36,7 +36,8 @@ void gets( char* x, int n ) {
 
 extern void main_P3(); 
 extern void main_P4(); 
-extern void main_P5(); 
+extern void main_P5();
+extern void main_Philosophers();
 
 void* load( char* x ) {
   if     ( 0 == strcmp( x, "P3" ) ) {
@@ -48,7 +49,9 @@ void* load( char* x ) {
   else if( 0 == strcmp( x, "P5" ) ) {
     return &main_P5;
   }
-
+  else if (0 == strcmp( x, "philosophers")) {
+    return &main_Philosophers; // I made sure to add another program the user could execute from the console calling it 'philosophers'
+  }
   return NULL;
 }
 
@@ -90,8 +93,7 @@ void main_console() {
 
     // step 1: write command prompt, then read command.
 
-    puts( "console$ ", strlen("console$ ") ); gets( cmd, MAX_CMD_CHARS );
-
+    puts( "console$ ", strlen("console$ ") ); gets( cmd, MAX_CMD_CHARS ); // changed the output to console to something more readable
     // step 2: tokenize command.
 
     int cmd_argc = 0; char* cmd_argv[ MAX_CMD_ARGS ];
@@ -104,10 +106,11 @@ void main_console() {
 
     if     ( 0 == strcmp( cmd_argv[ 0 ], "execute"   ) ) {
       void* addr = load( cmd_argv[ 1 ] );
-
       if( addr != NULL ) {
         if( 0 == fork() ) {
           exec( addr );
+        }
+        else {
         }
       }
       else {
@@ -121,6 +124,5 @@ void main_console() {
       puts( "unknown command\n", 16 );
     }
   }
-
   exit( EXIT_SUCCESS );
 }

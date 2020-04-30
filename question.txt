@@ -1,0 +1,237 @@
+-------------------------------------------------------------------------------
+
+1. Instructions
+
+- replace any [...] with free text,
+  and
+- replace the [?] with an X if you have completed that stage,
+- replace the [?] with an * if you have attempted that stage, but you know
+  it doesn't work completely; document why you think it doesn't work, plus
+  what you would do to fix the problem, at the end of the marksheet.
+
+-------------------------------------------------------------------------------
+
+2. Information
+
+So that we can calibrate and improve the assignment in the future, give us
+a rough idea how long (in hours) you spent on it *in total*:
+
+effort : 70 to 100 hours
+
+-------------------------------------------------------------------------------
+
+3. Citation
+
+Clearly it might have an influence on your mark, but the use of third-party
+resources is allowed *iff.* it
+
+- hasn't been explicitly prohibited by the assignment description, *and*
+- is correctly cited.
+
+Let us know any third-party source code or resources you used (if any) so
+it's clear what's your work and what isn't:
+
+The code for the mutex_lock and mutex_unlock assesmbly functions I found here
+https://stackoverflow.com/a/20115886
+I changed the name from lock_mutex to mutex_lock and unlock_mutex to mutex_unlock
+I also changed the default values from locked being 1 to locked being 0
+and unlocked 0 to unlocked 1
+
+The code for sem_wait and sem_post I found within the lecture slides for week 17
+page 7. Process management
+
+-------------------------------------------------------------------------------
+
+4. Marking
+
+The following gives a stage-by-stage description of the assignment marking
+scheme.  Note this acts as an indicative guideline only, including weights
+for each more obvious aspect (e.g., functional correctness); other aspects
+outside this list can warrant an increase/decrease in marks, with examples
+including hard to quantify features such as style, efficiency, robustness, 
+generality, or realism of a solution.  Put another way, identifying then
+reasoning about these latter aspects forms part of the assessment, so they
+are not (necessarily) detailed explicitly.
+
+    Stage 1 : a baseline kernel
+[X]           - pre-emptive multi-tasking                            ( 30%)
+[X]           - priority-based scheduler                             ( 10%)
+
+    Stage 2 : closed generalisations and enhancements
+[X]           - fork, exec, and exit system calls                    ( 15%)
+[X]           - Inter-Process Communication (IPC)                    ( 15%)
+
+    Stage 3 : open   generalisations and enhancements                ( 30%)
+[?]           - MMU-based protection and virtualisation
+                *OR*
+[?]           - LCD screen and PS/2 device drivers and GUI
+                *OR*
+[?]           - file system based on simplified, emulated disk
+                *OR*
+[?]           - kernel port to real, physical hardware                     
+
+                                                                     ------
+                                                                     (100%)
+
+-------------------------------------------------------------------------------
+
+5. Documentation
+
+Any other documentation, notes or comments that you think are important or
+might be easy to overlook (e.g., a subtle issue or technique in associated
+source code) should go here:
+
+Most of the relevant documentation for the source code is written as comments within
+the source code itself
+
+I have used a priority-based scheduler to schedule the processes, these are created
+in a for loop where up to a specified MAX_PROCS which I have chosen to be 32.
+
+The first process is dedicated to the main_console so a user can execute programs
+and the rest are all set up with their stack pointer at the relevant position
+according to their space in the stack rather than from the start of the program
+because they do not have an initial program to run on. Because each process takes
+up 0x00001000 space and is situated one below the other within the stack it is
+easy to set the stack pointer by simply taking away multiples of 0x00001000
+according to what process is currently being set up.
+
+Every process that is not currently running has a status of STATUS_TERMINATED
+which the scheduler checks for to make sure they are not scheduled in the active
+execution. Each process has a default age of 0 and a kernel wide base priority of
+1. Every time a process is not chosen the age of the process increases and therefore
+the corresponding priority when it is worked out next time a process is scheduled.
+
+Instead of using yield, the timer is used from lab 4, to make the execution independent
+of the programs the processes are running i.e. the program does not need to invoke
+the yield system call in order for the next process to be scheduled, it will be
+scheduled automatically via the timer interrupt. Each process runs for approximately
+1 second before the next is executed.
+
+The main console accepts two commands, 'execute' and 'terminate'
+
+Execute first checks the input program against valid programs it can execute, in my case
+'P3' 'P4' 'P5' and 'philosophers' (for showcasing the IPC mechanism). If one of these
+programs is recognised, a fork call is made, after (a successful fork call) an exec call
+is made with the address of the starting point of execution for the desired program e.g.
+if 'P4' was the program that was to be executed, the point of entry for that program would
+be its main function, namely 'main_P4' a variable for this is made using 'extern' and the
+address for the function is applied to the return argument using a pointer.
+
+fork works by selecting a process that is viable to be used as the child process, (a simple
+for loop that checks for the next process whose status is STATUS_TERMINATED) the context from
+the parent is memcpy-ied into the context of the child. the documentation of fork states
+that the child process needs to have the same entry point into the program as the parent,
+i.e. this means when the child (the copy of the parent) is made, it needs to start execution
+at the exact point, the parent left off, while the parent is also carrying on execution at
+that point, this gives the seemingly double return from fork that I have observed
+
+The program that the parent is executing also needs to be memcpy-ied because you are copying
+the whole stack space and due to the nature of how memcpy works (i.e. copies from bottom to
+top of the memory) the stack space allocated to the process needs to be taken away from the
+top of stack (i.e. leaving you with the bottom of the stack at point of which to start copying)
+
+Because of the entry points needing to be the same, the parent's, stack pointer offset
+from the top of its stack is worked out and also applied (taken away) to the stack pointer
+of the child.
+
+I have a global variable that keeps track of the total number of active processes i.e. any
+process whose status is not STATUS_TERMINATED which I have also incremented in fork (I did
+not find a use for this variable during the time I was working on this coursework)
+
+The return of fork is also important, and came in handy to me later in my implementation
+for the IPC problem. The return (i.e. the value placed into r0) of the child should be 0
+indicating a successful fork, and the return of the parent should be the PID of the child
+they have just created.
+
+After fork, exec is called, it takes in an address in memory to where the entry point of the
+program to be executed is located and it is placed into r0, this means when the interrupt is
+made 'ctx->gpr[0]' will contain the program address that is needed. In the interrupt (that is
+caused by the child) the stack pointer is reset and the program is set to ctx->gpr[0].
+
+one a program is executing it will continue executing until a user terminates it or if the
+program itself has an exit interrupt.
+
+exit and kill are two different interrupts, one simply changing the status of the process
+to STATUS_TERMINATED to stop it from being scheduled and the other killing the 
+process by resetting the values.
+
+the user needs to know the pid of the process that is currently running the program that
+the user wishes to terminate and can then issue the command 'terminate x' where x is the
+pid of the process they wish to kill.
+
+the pid is converted to an int and placed once again into r0 before the interrupt where it
+is taken out of ctx->gpr[0] (the process needs to be indexed in order to select it so it
+is crucial to minus 1 from the value that is passed through the register because of how
+indexing works) the status is also changed to STATUS_TERMINATED so that it is no longer
+scheduled but also the stack pointer is reset to its initial value i.e. (0x00001000 * n)
+times below the top of stack for the 0th process (the one that is executing the main
+console). I added an optional return value for kill (which is found in the official
+documentation) stating the return for a successful kill is 0 and -1 if unsuccessful.
+
+Side note, (observation) if you terminate the main console i.e. with 'terminate 1' while
+it is the only process actively executing then hilevel_handler_rst will be called
+whereas if you terminate it while there are other processes active then the status
+of the main console process will be turned to STATUS_TERMINATED and it cannot be scheduled
+again, hilevel_handler_rst is only invoked when there are no active processes.
+
+For Stage 2b to show how IPC worked I elected to use semaphores (with an additional implementation
+with mutexes) to solve the dining philosophers’ program. Because I had more than one solution for
+the IPC problem, the program that called fork 16 times was not the same program that
+ran the philosopher logic, there was one program that ran the logic with semaphores
+and one that ran it with mutexes.
+
+I found the ARM mutex lock and unlock assembly code which I have cited above to help me
+and used the sem_wait and sem_post functions from the lecture slides.
+
+semaphore solution:
+I created a new struct for a philosopher which contained, its pid within the main 
+kernels processes, the current status, the number of times a philosopher had eaten and 
+two pointers (one to left fork and one to right fork) I then created an array of 
+philosophers of the given size (16) and also had an array of semaphores the same size 
+at the array of philosophers, as there is one fork for each philosopher.
+
+The semaphore solution also included a waiter which along with the fork semaphores ensured
+mutual exclusion which was also a pointer to ensure that it would work globally (i.e.
+across all philosophers). A philosopher needed to be hungry to be allowed to request the
+waiter and once it had the waiter, (using sem_wait) it checked both its left and right
+forks to make sure they were free (of course its left fork is the philosopher-to-the-left's
+right fork) it then requested the forks (using sem_wait again) and released the waiter
+before eating for a random amount of time before it then replaced the forks (using sem_post)
+
+It also waited for a random amount of time before it requested the waiter. Once a philosopher
+had eaten it was not hungry anymore instead it was thinking, and it also did this for a random
+amount of time before it became hungry again (this prevented starvation as it gave the philosopher
+next to it a chance to eat before it became hungry again) To make sure the philosophers
+did not starve I kept track of how many times they ate and compared the max times eaten and 
+the min times eaten every iteration of the infinite loop, and no philosopher ever starved.
+
+I made a wait function which simply performed the "nop" operation n times where n was a
+random number of processor ticks calculated from a seed from the timer that was controlling
+the kernels execution.
+
+I did not know which philosopher I had to access within the philosopher array and therefore
+made use of the pid of the process in which it was executing, when the parent process returned
+with the child’s pid in its register as the return value I set that to the pid within the
+philosopher struct. Then inside the program that performs the philosopher logic
+I made use of an interrupt to return the pid of the current executing process in the kernel
+I then compared this to the pid of the philosophers in the philosopher array and got the
+index of which philosopher it was within the philosopher array.
+
+mutex solution:
+The mutex solution is very similar but it does not make use of a waiter (since I wanted a
+comparison) the forks are mutexes instead of semaphores and are either locked or unlocked
+for a philosopher to use. The same check is done to make sure both forks are free before
+atomically locking both. This could also only be done if a philosopher was hungry
+and if a philosopher was thinking it also had to wait a random time before it became hungry
+again.
+
+When testing them both I found the mutex IPC solution offered a considerably lower difference
+in the max meals and min meals consumed, the difference stayed as a single figure with 200+
+meals having been consumed by each philosopher whereas when using the semaphore solution,
+when the number of meals consumed went above 50+ I already saw double figures in the
+difference of meals consumed. I am not sure why this is, potentially because of the inconsistency
+of the waiter and the wait times between the solutions or the way I implemented the mutex
+simply worked differently and better.
+
+
+-------------------------------------------------------------------------------
