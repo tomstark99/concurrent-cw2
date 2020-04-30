@@ -81,6 +81,18 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
+Quick note to start, Whenever I build my project I get warnings that I have
+Implicit declarations of the following functions
+
+sem_wait
+sem_post
+mutex_lock (these mutex functions I explicitly renamed in hope it would get rid of the error)
+mutex_unlock
+strlen
+
+I am unsure how to get rid of them and where they could be alternatively defined
+but the solution works regardless
+
 Most of the relevant documentation for the source code is written as comments within
 the source code itself
 
@@ -184,7 +196,8 @@ I found the ARM mutex lock and unlock assembly code which I have cited above to 
 and used the sem_wait and sem_post functions from the lecture slides.
 
 semaphore solution:
-I created a new struct for a philosopher which contained, its pid within the main 
+I created a new struct for a philosopher which contained, its pid within the main.
+I also created a new definition for a genereic mutex that can be used for generic IPC
 kernels processes, the current status, the number of times a philosopher had eaten and 
 two pointers (one to left fork and one to right fork) I then created an array of 
 philosophers of the given size (16) and also had an array of semaphores the same size 
@@ -232,6 +245,9 @@ when the number of meals consumed went above 50+ I already saw double figures in
 difference of meals consumed. I am not sure why this is, potentially because of the inconsistency
 of the waiter and the wait times between the solutions or the way I implemented the mutex
 simply worked differently and better.
+
+By default I have left the solution that uses semaphores to execute since this is the more 
+generic IPC implementation, in my opinion though the mutex solution works much better.
 
 
 -------------------------------------------------------------------------------

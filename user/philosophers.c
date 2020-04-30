@@ -26,8 +26,13 @@ void runPhilosophers() {
         }
         else if( cb == 0 ) {
 
-            exec(&main_PhilosopherMutex); // exec each philosopher with the mutex implementation, I changed the default locked and unlocked values for the mutexes so that you did not have to change the definition of free if you want to switch between them.
-            //exec(&main_PhilosopherSemaphore); // exec each philosopher with the semaphore implementation
+            /* by default I have left the solution that uses semaphores to execute
+             * since this is the more generic IPC implementation, in my opinion though
+             * the mutex solution works much better.
+             */ 
+
+            //exec(&main_PhilosopherMutex); // exec each philosopher with the mutex implementation, I changed the default locked and unlocked values for the mutexes so that you did not have to change the definition of free if you want to switch between them.
+            exec(&main_PhilosopherSemaphore); // exec each philosopher with the semaphore implementation
             
         }
     }
