@@ -7,14 +7,14 @@
 
 #include "hilevel.h"
 
-/* We assume there will be two user processes, stemming from execution of the
- * two user programs P1 and P2, and can therefore
+/* We assume there will be n user processes, and therefore are uncertain how many
+ * we will have, this means: 
  *
- * - allocate a fixed-size process table (of PCBs), and then maintain an index
+ * - allocate a variable-size process table (of PCBs), and then maintain an index
  *   into it to keep track of the currently executing process, and
- * - employ a fixed-case of round-robin scheduling: no more processes can be
- *   created, and neither can be terminated, so assume both are always ready
- *   to execute.
+ * - employ a priority scheduling algorithm: processes can be created and terminated
+ *   but only through the console program so we must make sure this process is always
+ *   ready so it can be scheduled
  */
 
 /* - creates an array processes of the maximum size specified in hilevel.h
@@ -97,11 +97,8 @@ extern void     main_console();
 extern uint32_t tos_user;
 
 void hilevel_handler_rst( ctx_t* ctx              ) {
-  /* Invalidate all entries in the process table, so it's clear they are not
-   * representing valid (i.e., active) processes.
-   */
 
-    // this lets me know if hilevel_handler_rst has been called from the qemu window
+    // this lets me or the user know if hilevel_handler_rst has been called from the qemu window
     PL011_putc( UART0, '[',      true );
     PL011_putc( UART0, 'R', true );
     PL011_putc( UART0, 'E',      true );
@@ -176,7 +173,15 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
    */
 
   switch( id ) {
-    // yield not needed anymore
+    /* yield is not needed anymore, the way yield worked was a program
+     * caused a kernel interrupt once it had finished executing
+     * this kernel interrupt as you can see below caused the next process
+     * to be scheduled (which also was executing a program that had a yield call)
+     * because of this using yield to schedule more than 2 processes and programs
+     * becomes tedious and tricky this makes the priority based scheduler and the
+     * timer a much better solution as it does not rely on a specific program
+     * being run
+     */
     case 0x00 : { // 0x00 => yield()
       schedule( ctx );
 
@@ -295,7 +300,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       uint32_t kill = (uint32_t) (ctx->gpr[ 0 ]) - 1; // get the pid that we want to kill from the register that was passed from the interrupt call makign sure to take one off so we can index it correctly
       if(procTab[ kill ].status != STATUS_TERMINATED) { 
         procTab[ kill ].status = STATUS_TERMINATED; // set the status of the process to 0
-        //procTab[ kill ].ctx.pc = ( uint32_t )( &main_console ); // reset the program to the main console
+        //procTab[ kill ].ctx.pc = ( uint32_t )( &main_console ); we don't want more than one main console so leaving the pc alone waiting to be overwritten is the best solution // reset the program to the main console
         procTab[ kill ].ctx.sp = procTab[ 0 ].tos - (kill*0x00001000); // reset the stack pointer to the original value when the process was first created
         ctx->gpr[0] = 0; // a non essential return value of 0 is set to indicate the kill was successful
       }

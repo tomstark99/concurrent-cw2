@@ -130,7 +130,7 @@ void main_PhilosopherMutex() {
                 mutex_lock(philosophers[pid%NUM_PHIL].left); // lock both forks, remembering that execution continues
                 mutex_lock(philosophers[pid%NUM_PHIL].right);
 
-                itoa(s, pid);
+                itoa(s, pid+1);
                 write(STDOUT_FILENO, "\nphilosopher ", 14);
                 write(STDOUT_FILENO, s, strlen(s));
                 write(STDOUT_FILENO, " picked up their forks and is eating\n", 37);
@@ -140,7 +140,7 @@ void main_PhilosopherMutex() {
                 
             }
             else {
-                itoa(s, pid);
+                itoa(s, pid+1);
                 write(STDOUT_FILENO, "\nphilosopher ", 13);
                 write(STDOUT_FILENO, s, strlen(s));
                 write(STDOUT_FILENO, " couldn't eat, not enough forks\n", 32);
@@ -159,7 +159,7 @@ void main_PhilosopherMutex() {
             mutex_unlock(philosophers[pid%NUM_PHIL].left);
             mutex_unlock(philosophers[pid%NUM_PHIL].right);
 
-            itoa(s, pid);
+            itoa(s, pid+1);
             write(STDOUT_FILENO, "\nphilosopher ", 13);
             write(STDOUT_FILENO, s, strlen(s));
             write(STDOUT_FILENO, " finished and replaced their forks\n", 35);

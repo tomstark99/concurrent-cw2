@@ -155,7 +155,7 @@ void main_PhilosopherSemaphore() {
 
         if(philosophers[pid%NUM_PHIL].state == HUNGRY) { // a philosopher may only request to eat if they are hungry
 
-            sem_wait(global_waiter); // request the waiter, execution halts here before it is allowed access to the waiter e.g. allowed into the critical section
+            sem_wait(global_waiter); // request the waiter, execution halts here before it is allowed access to the waiter e.g. allowed into the critical section this ensures mutual exclusion
 
             itoa(s, pid+1);
             write(STDOUT_FILENO, "\n\nphilosopher ", 14);

@@ -1,8 +1,9 @@
 @ this is a general implementation for mutexes in C, using mutex_lock to lock a mutex and mutex_unlock to free it again
 
-.equ locked,1
-.equ unlocked,0
-
+.equ locked,0      @ default value for locked and unlocked should be switched
+.equ unlocked,1    @ i.e. locked = 1 and unlocked = 0, I changed this around
+                   @ so that it is easier to switch between mutexes and semaphores
+                   @ so now both have a default (unlocked) value of 1
 @ lock_mutex
 @ Declare for use from C as extern void lock_mutex(void * mutex);
     .global mutex_lock

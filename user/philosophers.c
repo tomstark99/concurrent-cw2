@@ -15,21 +15,19 @@ void initialiseMutexes() {
 }
 
 void runPhilosophers() {
-    int aux = 0;
+    int cb = 0; // make a temp callback variable to be used as the reply of fork
     global_waiter = &waiter; // global waiter pointer to the address of the waiter
     for (int i = 0; i < NUM_PHIL; i++) {
         philosophers[i].left = &forks[(i) % NUM_PHIL]; //give each philosopher a left and a right fork corresponding to their position
         philosophers[i].right = &forks[(i + 1) % NUM_PHIL];
-        aux = fork(); // call fork 16 times to spawn 16 processes
-        if(aux != 0) {
-            itoa(s, aux);
-            write(STDOUT_FILENO, s, strlen(s));
-            philosophers[i].pid = aux; // set the pid to the process pid which will be useful later
+        cb = fork(); // call fork 16 times to spawn 16 processes
+        if(cb != 0) {
+            philosophers[i].pid = cb; // set the pid to the process pid which will be useful later
         }
-        else if( aux == 0 ) {
+        else if( cb == 0 ) {
 
-            //exec(&main_PhilosopherMutex);
-            exec(&main_PhilosopherSemaphore); // exec each philosopher with the semaphore implementation
+            exec(&main_PhilosopherMutex); // exec each philosopher with the mutex implementation, I changed the default locked and unlocked values for the mutexes so that you did not have to change the definition of free if you want to switch between them.
+            //exec(&main_PhilosopherSemaphore); // exec each philosopher with the semaphore implementation
             
         }
     }

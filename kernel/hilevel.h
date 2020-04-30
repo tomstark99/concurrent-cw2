@@ -42,18 +42,18 @@
  */
 
 #define MAX_PROCS 32 // 32 seemed like a good number for max processes e.g. because of the IPC mechanism showcase taking up 16 giving a comfortable amount of processes left for different programs
-#define BASE_PRIORITY 1 
+#define BASE_PRIORITY 1 // defined but not used
 
 typedef int pid_t;
 
 typedef enum {
   STATUS_INVALID,
 
-  STATUS_CREATED,
-  STATUS_TERMINATED,
+  STATUS_CREATED, // child process is set to this when fork is called
+  STATUS_TERMINATED, // process initially set to this when created in rst
 
-  STATUS_READY,
-  STATUS_EXECUTING,
+  STATUS_READY, // process status when has been created and after it has been executed it becomes ready
+  STATUS_EXECUTING, // only one process should have this at any one time, when it is currently executing
   STATUS_WAITING
 } status_t;
 
