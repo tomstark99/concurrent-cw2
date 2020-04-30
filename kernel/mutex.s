@@ -1,3 +1,5 @@
+@ this is a general implementation for mutexes in C, using mutex_lock to lock a mutex and mutex_unlock to free it again
+
 .equ locked,1
 .equ unlocked,0
 

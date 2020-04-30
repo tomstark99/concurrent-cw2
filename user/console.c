@@ -50,7 +50,7 @@ void* load( char* x ) {
     return &main_P5;
   }
   else if (0 == strcmp( x, "philosophers")) {
-    return &main_Philosophers;
+    return &main_Philosophers; // I made sure to add another program the user could execute from the console calling it 'philosophers'
   }
   return NULL;
 }
@@ -93,7 +93,7 @@ void main_console() {
 
     // step 1: write command prompt, then read command.
 
-    puts( "console$ ", strlen("console$ ") ); gets( cmd, MAX_CMD_CHARS );
+    puts( "console$ ", strlen("console$ ") ); gets( cmd, MAX_CMD_CHARS ); // changed the output to console to something more readable
     // step 2: tokenize command.
 
     int cmd_argc = 0; char* cmd_argv[ MAX_CMD_ARGS ];

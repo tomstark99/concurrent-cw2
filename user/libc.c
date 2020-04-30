@@ -124,55 +124,13 @@ void exec( const void* x ) {
 }
 
 int phil() {
-  int r;
+  int r; // creates a variable r to store the register value (pid)
   asm volatile( "svc %1     \n" // make system call SYS_PHIL
                 "mov %0, r0 \n" // assign r = r0
               : "=r" (r) 
               : "I" (SYS_PHIL)
               : "r0" );
   return r;
-}
-
-int rand2( void ) {
-  next = next * 234503515245 + 123456;
-  return (unsigned int) next % 268435456;
-}
-
-void srand2(unsigned int seed) {
-  next = seed;
-  return;
-}
-
-void wait(unsigned int c) {
-  for(int i = 0; i < c; i++) {
-    asm volatile( "nop" );
-  }
-}
-
-void sem_wait( void *s ) {
-
-  asm volatile( "ldrex r1, [r0]     \n" // s’ = MEM[&s] 
-                "cmp r1, #0         \n" // s’ ?= 0 
-                "beq sem_wait       \n" // if s’ == 0, retry 
-                "sub r1, r1, #1     \n" // s’ = s’ - 1 
-                "strex r2, r1, [r0] \n" // r <= MEM[&s] = s’ 
-                "cmp r2, #0         \n" // r ?= 0 
-                "bne sem_wait       \n" // if r != 0, retry 
-                "dmb                \n" // memory barrier 
-                "bx lr              \n");
-  return;
-}
-
-void sem_post( void *s ) {
-
-  asm volatile( "ldrex r1, [r0]     \n" // s’ = MEM[&s]
-                "add r1, r1, #1     \n" // s’ = s’ + 1 
-                "strex r2, r1, [r0] \n" // r <= MEM[&s] = s’ 
-                "cmp r2, #0         \n" // r ?= 0 
-                "bne sem_post       \n" // if r != 0, retry 
-                "dmb                \n" // memory barrier 
-                "bx lr              \n");
-  return;
 }
 
 int  kill( int pid, int x ) {
@@ -197,5 +155,46 @@ void nice( int pid, int x ) {
               : "I" (SYS_NICE), "r" (pid), "r" (x)
               : "r0", "r1" );
 
+  return;
+}
+
+int rand2( void ) {
+  next = next * 234503515245 + 123456; // arbitrary manipulation of the seed
+  return (unsigned int) next % 268435456; // making sure the random number stays within a certain limit so the wait time is not excessively long
+}
+
+void srand2(unsigned int seed) {
+  next = seed;
+  return;
+}
+
+void wait(unsigned int c) {
+  for(int i = 0; i < c; i++) {
+    asm volatile( "nop" ); // do no operation for as many times as c
+  }
+}
+
+void sem_wait( void *s ) {
+  asm volatile( "ldrex r1, [r0]     \n" // s’ = MEM[&s]           loads the memory address of the semaphore into r1
+                "cmp r1, #0         \n" // s’ ?= 0                checks to see if the value fo the semaphore is equal to 0
+                "beq sem_wait       \n" // if s’ == 0, retry      if it is 0 then the program is allowed to access the critical section
+                "sub r1, r1, #1     \n" // s’ = s’ - 1            subtract 1 from the value of the semaphore
+                "strex r2, r1, [r0] \n" // r <= MEM[&s] = s’      store the new value of the semaphore in the initial memory location
+                "cmp r2, #0         \n" // r ?= 0                 compare the new value to 0
+                "bne sem_wait       \n" // if r != 0, retry       if the new value isn't 0 then branch until it is until it can go into the critical section it is stuck in the wait
+                "dmb                \n" // memory barrier         makes sure the above is observed before any memory is accessed
+                "bx lr              \n"); // return
+  return;
+}
+
+void sem_post( void *s ) {
+
+  asm volatile( "ldrex r1, [r0]     \n" // s’ = MEM[&s]           loads the memory address of the semaphore into r1
+                "add r1, r1, #1     \n" // s’ = s’ + 1            adds 1 to the value of the semaphore
+                "strex r2, r1, [r0] \n" // r <= MEM[&s] = s’      stores the new value of the semaphore in the initial memory location
+                "cmp r2, #0         \n" // r ?= 0                 checks if the new value is 0
+                "bne sem_post       \n" // if r != 0, retry       if it is not equal to zero then the program is no longer allowed to access the critical section
+                "dmb                \n" // memory barrier         makes sure the above is observed before any memory is accessed
+                "bx lr              \n"); // return
   return;
 }

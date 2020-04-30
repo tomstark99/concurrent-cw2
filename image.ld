@@ -22,7 +22,7 @@ SECTIONS {
   /* allocate stack for svc mode     */
   .       = . + 0x00001000;  
   tos_svc = .;
-    /* allocate stack for console    */
+    /* allocate stack for console   make sure enough stack space is allocated for all of the processes e.g. MAX_PROCS */
   .       = . + 0x00020000;
   tos_user  = .;
 }
