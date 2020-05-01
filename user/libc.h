@@ -11,6 +11,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <mutex.h>
 
 // Define a type that that captures a Process IDentifier (PID).
@@ -69,6 +70,16 @@ extern int write( int fd, const void* x, size_t n );
 // read  n bytes into x from the file descriptor fd; return bytes read
 extern int  read( int fd,       void* x, size_t n );
 // wait for given counter
+// perform fork, returning 0 iff. child or > 0 iff. parent process
+extern int  fork();
+// perform exit, i.e., terminate process with status x
+extern void exit(       int   x );
+// perform exec, i.e., start executing program at address x
+extern void exec( const void* x );
+// for process identified by pid, send signal of x
+extern int  kill( pid_t pid, int x );
+// for process identified by pid, set  priority to x
+extern void nice( pid_t pid, int x );
 
 // a custom random function that uses a seed based off the timer that runs in the kernel
 extern int rand2();
@@ -80,19 +91,7 @@ extern void wait( unsigned int c );
 extern void sem_wait( void *s );
 extern void sem_post( void *s );
 
-// perform fork, returning 0 iff. child or > 0 iff. parent process
-extern int  fork();
-// perform exit, i.e., terminate process with status x
-extern void exit(       int   x );
-// perform exec, i.e., start executing program at address x
-extern void exec( const void* x );
-
 // perform an interrupt to get the pid for the currently executing process
 extern int phil();
-
-// for process identified by pid, send signal of x
-extern int  kill( pid_t pid, int x );
-// for process identified by pid, set  priority to x
-extern void nice( pid_t pid, int x );
 
 #endif
