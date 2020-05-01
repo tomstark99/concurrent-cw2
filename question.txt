@@ -81,18 +81,6 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-Quick note to start, Whenever I build my project I get warnings that I have
-Implicit declarations of the following functions
-
-sem_wait
-sem_post
-mutex_lock (these mutex functions I explicitly renamed in hope it would get rid of the error)
-mutex_unlock
-strlen
-
-I am unsure how to get rid of them and where they could be alternatively defined
-but the solution works regardless
-
 Most of the relevant documentation for the source code is written as comments within
 the source code itself
 
