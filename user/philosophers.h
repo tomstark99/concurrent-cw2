@@ -20,8 +20,6 @@
 #define EATING 3
 #define HUNGRY 4
 
-typedef uint32_t sem_t;
-
 typedef struct {
        pid_t    pid; // Process IDentifier (PID)
        uint32_t state; // current state
