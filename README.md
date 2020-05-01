@@ -15,3 +15,10 @@ you should see `console$` be output on the console terminal here you can issue t
 `execute` followed by the name of the program you wish to execute
 
 `terminate` followed by the pid number of the process you wish to kill
+
+list of programs you can execute
+
+- `P3`
+- `P4`
+- `P5`
+- `philosophers`
