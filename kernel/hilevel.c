@@ -23,6 +23,7 @@
  */
 pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL; int num_procs = 0;
 
+
 // dispatch changes the executing processes from the previous to the next which is given by the schedule function
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
@@ -148,6 +149,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
   TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
   TIMER0->Timer1Ctrl |= 0x00000080; // enable          timer
+
 
   GICC0->PMR          = 0x000000F0; // unmask all            interrupts
   GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
