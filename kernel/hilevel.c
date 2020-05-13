@@ -91,44 +91,19 @@ int getPriority() {
   return priorityIndex; // return the index that we have found
 }
 
-char * getProgram(uint32_t addr) {
-  extern void main_P3();
-  extern void main_P4();
-  extern void main_P5();
-  extern void main_Philosophers();
+char * get_prog( uint32_t x ) {
 
-  char s[20];
-  write(STDIN_FILENO, "\n\n", 2);
-  itoa(s, procTab[0].ctx.pc);
-  write(STDIN_FILENO, s, strlen(s));
-  write(STDIN_FILENO, "\n", 1);
-  itoa(s, (uint32_t)(&main_console));
-  write(STDIN_FILENO, s, strlen(s));
-  write(STDIN_FILENO, "\n", 1);
-  itoa(s, procTab[1].ctx.pc);
-  write(STDIN_FILENO, s, strlen(s));
-  write(STDIN_FILENO, "\n", 1);
-  itoa(s, (uint32_t)(&main_lcd));
-  write(STDIN_FILENO, s, strlen(s));
-  write(STDIN_FILENO, "\n\n", 2);
-
-  if((uint32_t)(&main_P3) == addr) {
+  if(4 == x) {
     return "P3";
   }
-  else if((uint32_t)(&main_P4) == addr){
+  else if(5 == x){
     return "P4";
   } 
-  else if((uint32_t)(&main_P5) == addr){
+  else if(6 == x){
     return "P5";
   } 
-  else if((uint32_t)(&main_Philosophers) == addr){
+  else if(25 == x){
     return "Ph";
-  }
-  else if((uint32_t)(&main_console) == addr) {
-    return "cn";
-  }
-  else if((uint32_t)(&main_lcd) == procTab[1].ctx.pc) {
-    return "ld";
   }
   else{
     return "  ";
@@ -325,7 +300,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     w = exing[i];
     // char *s = getProgram(procTab[i].ctx.pc);
     // write(STDOUT_FILENO, s, strlen(s));
-    draw_string(getProgram(procTab[i].ctx.pc), w.length, w.x, w.y, w.scale, w.neg, w.pos);
+    //draw_string(getProgram(procTab[i].ctx.pc), w.length, w.x, w.y, w.scale, w.neg, w.pos);
   }
 
 
@@ -510,6 +485,15 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       procTab[0].ctx.sp = procTab[ 0 ].tos;
 
       ctx->gpr[0] = 0;
+      break;
+    }
+
+    case 0x10 : {
+
+      word_t w = exing[ executing->pid-1];
+      char *s = get_prog(ctx->gpr[0]);
+      draw_string(s, w.length, w.x, w.y, w.scale, w.neg, w.pos);
+      break;
     }
 
     default   : { // 0x?? => unknown/unsupported

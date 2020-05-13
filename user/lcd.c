@@ -24,7 +24,6 @@ void* load_addr( uint8_t p ) {
   return NULL;
 }
 
-
 void main_lcd() {
   while( 1 ) {
     char s[10];
@@ -38,6 +37,7 @@ void main_lcd() {
       void* addr = load_addr( press );
       if( addr != NULL ) {
         if( 0 == fork() ) {
+          draw( press );
           exec( addr );
         }
         else {

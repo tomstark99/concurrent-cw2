@@ -48,6 +48,7 @@ unsigned int next;
 // a system call to get the pid and therefore the philosopher number for indexing the philosopher in the IPC solution
 #define SYS_PHIL      ( 0x08 )
 #define SYS_KILL_ALL  ( 0x09 )
+#define SYS_DRAW      ( 0x10 )
 
 #define SIG_TERM      ( 0x00 )
 #define SIG_QUIT      ( 0x01 )
@@ -80,7 +81,7 @@ extern void exec( const void* x );
 // for process identified by pid, send signal of x
 extern int  kill( pid_t pid, int x );
 
-
+extern void draw( int x );
 extern int  kill_all( int x );
 
 
