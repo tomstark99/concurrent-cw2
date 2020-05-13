@@ -118,7 +118,11 @@ void main_console() {
       }
     } 
     else if( 0 == strcmp( cmd_argv[ 0 ], "terminate" ) ) {
-      kill( atoi( cmd_argv[ 1 ] ), SIG_TERM );
+      if( 0 == strcmp( cmd_argv[ 1 ], "all")) {
+        kill_all( SIG_TERM );
+      } else {
+        kill( atoi( cmd_argv[ 1 ] ), SIG_TERM );
+      }
     } 
     else {
       puts( "unknown command\n", 16 );

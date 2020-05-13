@@ -23,6 +23,15 @@
  */
 pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL; int num_procs = 0;
 
+// create a reference to the program that we want to load into the process (so it can be used in this file)
+extern void     main_console();
+extern void     main_lcd();
+
+// create a reference to the top of stack for the 'user' programs that the processes will run which is defined in image.ld
+extern uint32_t tos_user;
+
+uint16_t fb[ 600 ][ 800 ];
+
 // dispatch changes the executing processes from the previous to the next which is given by the schedule function
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
   char prev_pid = '?', next_pid = '?';
@@ -82,6 +91,82 @@ int getPriority() {
   return priorityIndex; // return the index that we have found
 }
 
+char * getProgram(uint32_t addr) {
+  extern void main_P3();
+  extern void main_P4();
+  extern void main_P5();
+  extern void main_Philosophers();
+
+  char s[20];
+  write(STDIN_FILENO, "\n\n", 2);
+  itoa(s, procTab[0].ctx.pc);
+  write(STDIN_FILENO, s, strlen(s));
+  write(STDIN_FILENO, "\n", 1);
+  itoa(s, (uint32_t)(&main_console));
+  write(STDIN_FILENO, s, strlen(s));
+  write(STDIN_FILENO, "\n", 1);
+  itoa(s, procTab[1].ctx.pc);
+  write(STDIN_FILENO, s, strlen(s));
+  write(STDIN_FILENO, "\n", 1);
+  itoa(s, (uint32_t)(&main_lcd));
+  write(STDIN_FILENO, s, strlen(s));
+  write(STDIN_FILENO, "\n\n", 2);
+
+  if((uint32_t)(&main_P3) == addr) {
+    return "P3";
+  }
+  else if((uint32_t)(&main_P4) == addr){
+    return "P4";
+  } 
+  else if((uint32_t)(&main_P5) == addr){
+    return "P5";
+  } 
+  else if((uint32_t)(&main_Philosophers) == addr){
+    return "Ph";
+  }
+  else if((uint32_t)(&main_console) == addr) {
+    return "cn";
+  }
+  else if((uint32_t)(&main_lcd) == procTab[1].ctx.pc) {
+    return "ld";
+  }
+  else{
+    return "  ";
+  }
+}
+
+void draw_char(char *b, int x, int y, int scale, colour_t neg, colour_t pos) {
+    int set;
+    for (int i=0; i < 8; i++) {
+        for (int j=0; j < 8; j++) {
+            set = b[i] >> j & 1;
+
+            int p=i*scale;
+            int q=j*scale;
+            for (int a = 0; a < scale; a++) {
+              for(int b = 0; b < scale; b++) {
+                if(set == 1) {
+                  fb[y+(p+a)][x+(q+b)] = pos;
+                }
+                else{
+                  fb[y+(p+a)][x+(q+b)] = neg;
+                }
+              }
+            }
+        }
+    }
+}
+
+void draw_string(char *s, int l, int x, int y, int scale, colour_t neg, colour_t pos) {
+  for(int i = 0; i < l; i++) {
+
+    int x_new = x + (i*8*scale);
+    char temp = s[i];
+    char *b = font[temp];
+    draw_char(b, x_new, y, scale, neg, pos);
+  }
+}
+
 // this is the function that schedules a process to be executed (i.e. calls dispatch on it)
 void schedule( ctx_t* ctx ) {
   int priority = getPriority(); // using the function above get the index of the process to be scheduled
@@ -89,12 +174,21 @@ void schedule( ctx_t* ctx ) {
   dispatch( ctx, executing, &procTab[ priority ] ); // dispatch the address of the new process to be changed, giving it the 'new' context that is passed into the schedule function as well as the currently executing process
   executing->status = STATUS_READY; // change the status of the currently executing process to ready (so it can be selected again from the priority function)
   procTab[priority].status = STATUS_EXECUTING; // change the priority of the now executing process to executing
-}
 
-// create a reference to the program that we want to load into the process (so it can be used in this file)
-extern void     main_console();
-// create a reference to the top of stack for the 'user' programs that the processes will run which is defined in image.ld
-extern uint32_t tos_user;
+  for(int i = 0; i < MAX_PROCS; i++) {
+    word_t w = procs[i];
+    if(procTab[i].status != STATUS_TERMINATED) {
+      if(procTab[i].pid != executing->pid) {
+        draw_string(w.word, w.length, w.x, w.y, w.scale, GREEN, w.pos);
+      }
+    } else {
+        draw_string(w.word, w.length, w.x, w.y, w.scale, w.neg, w.pos);
+    }
+  }
+  word_t e = procs[priority];
+  draw_string(e.word, e.length, e.x, e.y, e.scale, WHITE, BLACK);
+
+}
 
 void hilevel_handler_rst( ctx_t* ctx              ) {
 
@@ -121,9 +215,19 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;                // the stack pointer for this program should be at the top of the stack of the process
   procTab[ 0 ].priority = 1;                               // the base priority for this and all processes is 1
   procTab[ 0 ].age      = 0;                               // the default age for this and all processes is 0
-  num_procs+=1; // we are adding one to the number of active processes
 
-  for (int i = 1; i < MAX_PROCS; i++) { // for all the rest of the processes we initialise them as dummy processes to be used at a point in execution
+  memset( &procTab[ 1 ], 0, sizeof( pcb_t ) ); // initialise 0-th PCB = console, so the user can interact with the kernel
+  procTab[ 1 ].pid      = 2;
+  procTab[ 1 ].status   = STATUS_READY;                    // the status of this should be ready so this one can be picked to be scheduled
+  procTab[ 1 ].tos      = ( uint32_t )( &tos_user  ) - 0x00001000;      // the top of stack for this program should be the top of the stack allocated in image.ld
+  procTab[ 1 ].ctx.cpsr = 0x50;
+  procTab[ 1 ].ctx.pc   = ( uint32_t )( &main_lcd );   // the program this process is executing is the main console 
+  procTab[ 1 ].ctx.sp   = procTab[ 1 ].tos;                // the stack pointer for this program should be at the top of the stack of the process
+  procTab[ 1 ].priority = 1;                               // the base priority for this and all processes is 1
+  procTab[ 1 ].age      = 0;                               // the default age for this and all processes is 0
+  num_procs+=2; // we are adding one to the number of active processes
+
+  for (int i = 2; i < MAX_PROCS; i++) { // for all the rest of the processes we initialise them as dummy processes to be used at a point in execution
     memset( &procTab[ i ], 0, sizeof( pcb_t ) ); // initialise 1-st to MAX_PROCS-th PCB without setting the program as this will be done later when you execute one
     procTab[ i ].pid      = i+1;                                // the pid is an increasing number and unique for each process
     procTab[ i ].status   = STATUS_TERMINATED;                  // the status for these is terminated so we don't accidentally schedule them
@@ -149,6 +253,44 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
   TIMER0->Timer1Ctrl |= 0x00000080; // enable          timer
 
+
+  // Configure the LCD display into 800x600 SVGA @ 36MHz resolution.
+
+  SYSCONF->CLCD      = 0x2CAC;     // per per Table 4.3 of datasheet
+  LCD->LCDTiming0    = 0x1313A4C4; // per per Table 4.3 of datasheet
+  LCD->LCDTiming1    = 0x0505F657; // per per Table 4.3 of datasheet
+  LCD->LCDTiming2    = 0x071F1800; // per per Table 4.3 of datasheet
+
+  LCD->LCDUPBASE     = ( uint32_t )( &fb );
+
+  LCD->LCDControl    = 0x00000020; // select TFT   display type
+  LCD->LCDControl   |= 0x00000008; // select 16BPP display mode
+  LCD->LCDControl   |= 0x00000800; // power-on LCD controller
+  LCD->LCDControl   |= 0x00000001; // enable   LCD controller
+
+  /* Configure the mechanism for interrupt handling by
+   *
+   * - configuring then enabling PS/2 controllers st. an interrupt is
+   *   raised every time a byte is subsequently received,
+   * - configuring GIC st. the selected interrupts are forwarded to the 
+   *   processor via the IRQ interrupt signal, then
+   * - enabling IRQ interrupts.
+   */
+
+  PS20->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
+  PS20->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
+  PS21->CR           = 0x00000010; // enable PS/2    (Rx) interrupt
+  PS21->CR          |= 0x00000004; // enable PS/2 (Tx+Rx)
+
+  uint8_t ack;
+
+        PL050_putc( PS20, 0xF4 );  // transmit PS/2 enable command
+  ack = PL050_getc( PS20       );  // receive  PS/2 acknowledgement
+        PL050_putc( PS21, 0xF4 );  // transmit PS/2 enable command
+  ack = PL050_getc( PS21       );  // receive  PS/2 acknowledgement
+
+
+
   GICC0->PMR          = 0x000000F0; // unmask all            interrupts
   GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
   GICC0->CTLR         = 0x00000001; // enable GIC interface
@@ -159,6 +301,33 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
 
   // this starts the timer
   int_enable_irq();
+
+  // char *a = "tom";
+  // char *b = "OS";
+  // char *c = "press the corresponding key for the program";
+  // char *d = "you would like to execute";
+  // char *e = "to run P3";
+  // char *f = "to run P4";
+  // char *g = "to run P5";
+  // char *h = "to run philosophers";
+  // draw_string(a, 3, 300, 50, 3, BLACK, WHITE);
+  // draw_string(b, 2, 380, 50, 4, RED, WHITE);
+  // draw_string(c, 43, 30, 100, 2, BLACK, GREEN);
+
+  for (int i = 0; i < NUM_WORDS; i++) {
+    word_t w = words[i];
+    draw_string(w.word, w.length, w.x, w.y, w.scale, w.neg, w.pos);
+  }
+
+  for (int i = 0; i < MAX_PROCS; i++) {
+    word_t w = procs[i];
+    draw_string(w.word, w.length, w.x, w.y, w.scale, w.neg, w.pos);
+    w = exing[i];
+    // char *s = getProgram(procTab[i].ctx.pc);
+    // write(STDOUT_FILENO, s, strlen(s));
+    draw_string(getProgram(procTab[i].ctx.pc), w.length, w.x, w.y, w.scale, w.neg, w.pos);
+  }
+
 
   return;
 }
@@ -266,6 +435,10 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'T', true );
       PL011_putc( UART0, ']', true );
       // with exit we are just invalidating the process not completely removing all the execution context and therefore all we need to do is give it a terminated (not active) flag
+
+      word_t w = procs[(executing->pid)-1];
+      draw_string(w.word, w.length, w.x, w.y, w.scale, w.neg, w.pos);
+
       executing->status = STATUS_TERMINATED;
       num_procs -= 1; // remove one from the active number of processes
       schedule( ctx ); // schedule the next process because the current one is no longer useful
@@ -280,6 +453,9 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'E', true );
       PL011_putc( UART0, 'C', true );
       PL011_putc( UART0, ']', true );
+
+      word_t w = procs[(executing->pid)-1];
+      draw_string(w.word, w.length, w.x, w.y, w.scale, GREEN, w.pos);
 
       ctx->sp = executing->tos; // the current executing process at the time of the exec call will be the child we set the stack pointer of the child to be the top of the stack for the new program
       ctx->pc = ctx->gpr[ 0 ]; // set the program from the address passed in from register 0
@@ -297,7 +473,12 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       PL011_putc( UART0, 'L', true );
       PL011_putc( UART0, ']', true );
 
+
       uint32_t kill = (uint32_t) (ctx->gpr[ 0 ]) - 1; // get the pid that we want to kill from the register that was passed from the interrupt call makign sure to take one off so we can index it correctly
+
+      word_t w = procs[ kill ];
+      draw_string(w.word, w.length, w.x, w.y, w.scale, w.neg, w.pos);
+
       if(procTab[ kill ].status != STATUS_TERMINATED) { 
         procTab[ kill ].status = STATUS_TERMINATED; // set the status of the process to 0
         //procTab[ kill ].ctx.pc = ( uint32_t )( &main_console ); we don't want more than one main console so leaving the pc alone waiting to be overwritten is the best solution // reset the program to the main console
@@ -316,6 +497,21 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
 
+    case 0x09 : { // kill all
+      for(int i = 2; i < MAX_PROCS; i++) {
+        procTab[i].status = STATUS_TERMINATED;
+        procTab[i].ctx.sp = procTab[ 0 ].tos - (i*0x00001000);
+      }
+
+      procTab[1].status = STATUS_TERMINATED;
+      procTab[1].ctx.sp = procTab[ 0 ].tos - 0x00001000;
+
+      procTab[0].status = STATUS_TERMINATED;
+      procTab[0].ctx.sp = procTab[ 0 ].tos;
+
+      ctx->gpr[0] = 0;
+    }
+
     default   : { // 0x?? => unknown/unsupported
       break;
     }
@@ -331,6 +527,29 @@ void hilevel_handler_irq(ctx_t* ctx) {
   uint32_t id = GICC0->IAR;
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
+  // char s[10];
+  // uint8_t f = PL050_getc( PS20 );
+  // itoa(s, f);
+  // write(STDOUT_FILENO, s, strlen(s));
+
+  if     ( id == GIC_SOURCE_PS20 ) {
+  uint8_t x = PL050_getc( PS20 );
+
+  PL011_putc( UART0, '0',                      true ); 
+  PL011_putc( UART0, '<',                      true ); 
+  PL011_putc( UART0, itox( ( x >> 4 ) & 0xF ), true ); 
+  PL011_putc( UART0, itox( ( x >> 0 ) & 0xF ), true ); 
+  PL011_putc( UART0, '>',                      true ); 
+  }
+  else if( id == GIC_SOURCE_PS21 ) {
+  uint8_t y = PL050_getc( PS21 );
+
+  PL011_putc( UART0, '1',                      true ); 
+  PL011_putc( UART0, '<',                      true ); 
+  PL011_putc( UART0, itox( ( y >> 4 ) & 0xF ), true ); 
+  PL011_putc( UART0, itox( ( y >> 0 ) & 0xF ), true ); 
+  PL011_putc( UART0, '>',                      true ); 
+  }
 
   if( id == GIC_SOURCE_TIMER0 ) {
     //PL011_putc( UART0, 'T', true );

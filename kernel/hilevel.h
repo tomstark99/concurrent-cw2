@@ -22,6 +22,12 @@
 #include "PL011.h"
 #include "SP804.h"
 
+#include "PL050.h"
+#include "PL111.h"
+#include   "SYS.h"
+
+#include "font.h"
+
 // Include functionality relating to the   kernel.
 
 #include "lolevel.h"
@@ -47,6 +53,14 @@
 typedef int pid_t;
 
 typedef enum {
+  WHITE = 0x7FFF,
+  BLACK = 0x0000,
+  RED   = 0x001F,
+  GREEN = 0x03E0,
+  BLUE  = 0x7C00
+} colour_t;
+
+typedef enum {
   STATUS_INVALID,
 
   STATUS_CREATED, // child process is set to this when fork is called
@@ -69,5 +83,109 @@ typedef struct {
      pid_t    age;    // I added age and priority to the pcb struct so they could be easily accessed from within the kernel for the scheduling of the processes
      pid_t priority;
 } pcb_t;
+
+#define NUM_WORDS 19
+
+typedef struct {
+    char   *word;
+    int   length;
+    int        x;
+    int        y;
+    int    scale;
+    colour_t neg;
+    colour_t pos;
+} word_t;
+
+word_t words[NUM_WORDS] = {
+  {"tom", 3, 300, 20, 3, BLACK, WHITE},
+  {"OS", 2, 380, 12, 4, RED, WHITE},
+  {"press the corresponding key for the program", 43, 30, 70, 2, BLACK, GREEN},
+  {"you would like to execute", 25, 30, 100, 2, BLACK, GREEN},
+  {"3", 1, 150, 140, 3, BLUE, WHITE},
+  {"4", 1, 150, 180, 3, BLUE, WHITE},
+  {"5", 1, 150, 220, 3, BLUE, WHITE},
+  {"P", 1, 150, 260, 3, BLUE, WHITE},
+  {"to run P3", 9, 200, 140, 2, BLACK, WHITE},
+  {"to run P4", 9, 200, 180, 2, BLACK, WHITE},
+  {"to run P5", 9, 200, 220, 2, BLACK, WHITE},
+  {"to run philosophers", 19, 200, 260, 2, BLACK, WHITE},
+  {"these are the list of processes and the", 39, 30, 300, 2, BLACK, GREEN},
+  {"program that are currently running", 34, 30, 330, 2, BLACK, GREEN},
+  {"press", 5, 30, 570, 2, BLACK, GREEN},
+  {"T", 1, 126, 562, 3, RED, WHITE},
+  {"to terminate", 12, 166, 570, 2, BLACK, GREEN},
+  {"ALL", 3, 374, 562, 3, RED, WHITE},
+  {"processes and reset", 19, 462, 570, 2, BLACK, GREEN}
+};
+
+word_t procs[MAX_PROCS] = {
+  {"1 ", 2, 40,  400, 2, RED, WHITE},
+  {"2 ", 2, 80,  400, 2, RED, WHITE},
+  {"3 ", 2, 120, 400, 2, RED, WHITE},
+  {"4 ", 2, 160, 400, 2, RED, WHITE},
+  {"5 ", 2, 200, 400, 2, RED, WHITE},
+  {"6 ", 2, 240, 400, 2, RED, WHITE},
+  {"7 ", 2, 280, 400, 2, RED, WHITE},
+  {"8 ", 2, 320, 400, 2, RED, WHITE},
+  {"9 ", 2, 360, 400, 2, RED, WHITE},
+  {"10", 2, 400, 400, 2, RED, WHITE},
+  {"11", 2, 440, 400, 2, RED, WHITE},
+  {"12", 2, 480, 400, 2, RED, WHITE},
+  {"13", 2, 520, 400, 2, RED, WHITE},
+  {"14", 2, 560, 400, 2, RED, WHITE},
+  {"15", 2, 600, 400, 2, RED, WHITE},
+  {"16", 2, 640, 400, 2, RED, WHITE},
+  {"17", 2, 40,  480, 2, RED, WHITE},
+  {"18", 2, 80,  480, 2, RED, WHITE},
+  {"19", 2, 120, 480, 2, RED, WHITE},
+  {"20", 2, 160, 480, 2, RED, WHITE},
+  {"21", 2, 200, 480, 2, RED, WHITE},
+  {"22", 2, 240, 480, 2, RED, WHITE},
+  {"23", 2, 280, 480, 2, RED, WHITE},
+  {"24", 2, 320, 480, 2, RED, WHITE},
+  {"25", 2, 360, 480, 2, RED, WHITE},
+  {"26", 2, 400, 480, 2, RED, WHITE},
+  {"27", 2, 440, 480, 2, RED, WHITE},
+  {"28", 2, 480, 480, 2, RED, WHITE},
+  {"29", 2, 520, 480, 2, RED, WHITE},
+  {"30", 2, 560, 480, 2, RED, WHITE},
+  {"31", 2, 600, 480, 2, RED, WHITE},
+  {"32", 2, 640, 480, 2, RED, WHITE}
+};
+
+word_t exing[MAX_PROCS] = {
+  {"  ", 2, 40,  440, 2, BLACK, WHITE},
+  {"  ", 2, 80,  440, 2, BLACK, WHITE},
+  {"  ", 2, 120, 440, 2, BLACK, WHITE},
+  {"  ", 2, 160, 440, 2, BLACK, WHITE},
+  {"  ", 2, 200, 440, 2, BLACK, WHITE},
+  {"  ", 2, 240, 440, 2, BLACK, WHITE},
+  {"  ", 2, 280, 440, 2, BLACK, WHITE},
+  {"  ", 2, 320, 440, 2, BLACK, WHITE},
+  {"  ", 1, 360, 440, 2, BLACK, WHITE},
+  {"  ", 2, 400, 440, 2, BLACK, WHITE},
+  {"  ", 2, 440, 440, 2, BLACK, WHITE},
+  {"  ", 2, 480, 440, 2, BLACK, WHITE},
+  {"  ", 2, 520, 440, 2, BLACK, WHITE},
+  {"  ", 2, 560, 440, 2, BLACK, WHITE},
+  {"  ", 2, 600, 440, 2, BLACK, WHITE},
+  {"  ", 2, 640, 440, 2, BLACK, WHITE},
+  {"  ", 2, 40,  520, 2, BLACK, WHITE},
+  {"  ", 2, 80,  520, 2, BLACK, WHITE},
+  {"  ", 2, 120, 520, 2, BLACK, WHITE},
+  {"  ", 2, 160, 520, 2, BLACK, WHITE},
+  {"  ", 2, 200, 520, 2, BLACK, WHITE},
+  {"  ", 2, 240, 520, 2, BLACK, WHITE},
+  {"  ", 2, 280, 520, 2, BLACK, WHITE},
+  {"  ", 2, 320, 520, 2, BLACK, WHITE},
+  {"  ", 2, 360, 520, 2, BLACK, WHITE},
+  {"  ", 2, 400, 520, 2, BLACK, WHITE},
+  {"  ", 2, 440, 520, 2, BLACK, WHITE},
+  {"  ", 2, 480, 520, 2, BLACK, WHITE},
+  {"  ", 2, 520, 520, 2, BLACK, WHITE},
+  {"  ", 2, 560, 520, 2, BLACK, WHITE},
+  {"  ", 2, 600, 520, 2, BLACK, WHITE},
+  {"  ", 2, 640, 520, 2, BLACK, WHITE}
+};
 
 #endif
