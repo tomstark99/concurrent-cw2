@@ -33,31 +33,6 @@ extern uint32_t tos_user;
 mouse_t mouse = { 10, 10, 2, (WIDTH-10)-(8*2), 10, (HEIGHT-10)-(8*2), 10 };
 uint16_t fb[ HEIGHT ][ WIDTH ]; // initialise the lcd pixel matrix
 
-// dispatch changes the executing processes from the previous to the next which is given by the schedule function
-void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
-  char prev_pid = '?', next_pid = '?';
-
-  if( NULL != prev ) {
-    memcpy( &prev->ctx, ctx, sizeof( ctx_t ) ); // preserve execution context of P_{prev}
-    prev_pid = '0' + prev->pid;
-  }
-  if( NULL != next ) {
-    memcpy( ctx, &next->ctx, sizeof( ctx_t ) ); // restore  execution context of P_{next}
-    next_pid = '0' + next->pid;
-  }
-
-    PL011_putc( UART0, '[',      true );
-    PL011_putc( UART0, prev_pid, true );
-    PL011_putc( UART0, '-',      true );
-    PL011_putc( UART0, '>',      true );
-    PL011_putc( UART0, next_pid, true );
-    PL011_putc( UART0, ']',      true );
-
-    executing = next;                           // update   executing process to P_{next}
-
-  return;
-}
-
 // this function returns a pointer to the next 'available' process that has been marked as not in use
 pcb_t* getChildProcess(){
   for(int i = 0; i < MAX_PROCS; i++) { // loop through all the available processes
@@ -93,23 +68,20 @@ int getPriority() {
 }
 
 // this function returns a description of the program depending on the keyboard input either through the console or the lcd
-char * get_prog( uint32_t x ) {
-
-  if(4 == x) {
+char * get_prog( uint32_t p ) {
+  if     ( 0x04 == p ) {
     return "P3";
   }
-  else if(5 == x){
+  else if( 0x05 == p ) {
     return "P4";
-  } 
-  else if(6 == x){
+  }
+  else if( 0x06 == p ) {
     return "P5";
-  } 
-  else if(25 == x){
-    return "Ph";
   }
-  else{
-    return "  ";
+  else if (0x19 == p ) {
+    return "Ph"; 
   }
+  return "  ";
 }
 
 // this function draws a single character on the lcd
@@ -161,6 +133,31 @@ void re_draw_procs( uint32_t ex ) { // the processes and their status needs to b
   draw_string(e.word, e.length, e.x, e.y, e.scale, WHITE, BLACK); // this is coloured in with a negative colour of white
 }
 
+// dispatch changes the executing processes from the previous to the next which is given by the schedule function
+void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
+  char prev_pid = '?', next_pid = '?';
+
+  if( NULL != prev ) {
+    memcpy( &prev->ctx, ctx, sizeof( ctx_t ) ); // preserve execution context of P_{prev}
+    prev_pid = '0' + prev->pid;
+  }
+  if( NULL != next ) {
+    memcpy( ctx, &next->ctx, sizeof( ctx_t ) ); // restore  execution context of P_{next}
+    next_pid = '0' + next->pid;
+  }
+
+    PL011_putc( UART0, '[',      true );
+    PL011_putc( UART0, prev_pid, true );
+    PL011_putc( UART0, '-',      true );
+    PL011_putc( UART0, '>',      true );
+    PL011_putc( UART0, next_pid, true );
+    PL011_putc( UART0, ']',      true );
+
+    executing = next;                           // update   executing process to P_{next}
+
+  return;
+}
+
 // this is the function that schedules a process to be executed (i.e. calls dispatch on it)
 void schedule( ctx_t* ctx ) {
   int priority = getPriority(); // using the function above get the index of the process to be scheduled
@@ -197,7 +194,6 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;                // the stack pointer for this program should be at the top of the stack of the process
   procTab[ 0 ].priority = 1;                               // the base priority for this and all processes is 1
   procTab[ 0 ].age      = 0;                               // the default age for this and all processes is 0
-
   procTab[ 0 ].prog     = "Cn"; // the program it is running in char form to display it on the lcd
 
   num_procs+=1; // we are adding one to the number of active processes
@@ -228,7 +224,6 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   TIMER0->Timer1Ctrl |= 0x00000040; // select periodic timer
   TIMER0->Timer1Ctrl |= 0x00000020; // enable          timer interrupt
   TIMER0->Timer1Ctrl |= 0x00000080; // enable          timer
-
 
   // Configure the LCD display into 800x600 SVGA @ 36MHz resolution.
 
@@ -264,8 +259,6 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   ack = PL050_getc( PS20       );  // receive  PS/2 acknowledgement
         PL050_putc( PS21, 0xF4 );  // transmit PS/2 enable command
   ack = PL050_getc( PS21       );  // receive  PS/2 acknowledgement
-
-
 
   GICC0->PMR          = 0x000000F0; // unmask all            interrupts
   GICD0->ISENABLER1  |= 0x00000010; // enable timer          interrupt
@@ -450,7 +443,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
     }
 
     case 0x09 : { // kill all
-      // kill all lets us kill all processes at once, killing the 0-th process last and invoking a reset from the kernel
+      // kill all lets us kill all processes at once from a user program, killing the 0-th process last and invoking a reset from the kernel
       for(int i = 1; i < MAX_PROCS; i++) {
         procTab[i].status = STATUS_TERMINATED;
         procTab[i].ctx.sp = procTab[ 0 ].tos - (i*0x00001000);
@@ -478,19 +471,20 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
   return;
 }
 
+// for killing all the processes
 void killall() {
-
-  for(int i = 1; i < MAX_PROCS; i++) {
+  for(int i = 1; i < MAX_PROCS; i++) { // first kill all the processes that are not the console
     procTab[i].status = STATUS_TERMINATED;
     procTab[i].ctx.sp = procTab[ 0 ].tos - (i*0x00001000);
     procTab[i].prog = "  ";
   }
 
-  procTab[0].status = STATUS_TERMINATED;
+  procTab[0].status = STATUS_TERMINATED; // kill the console so that hilevel_handler_rst is invoked
   procTab[0].ctx.sp = procTab[ 0 ].tos;
   procTab[0].prog = "  ";
 }
 
+// this local (kernel) version of fork is nearly the exact same as the fork system call but without the r0 return values, it also performs the exec system call too
 void fork_local(ctx_t* ctx, uint32_t program, char *prog) {
   pcb_t * child = getChildProcess(); // get the next available process that isn't currently being used
 
@@ -510,8 +504,8 @@ void fork_local(ctx_t* ctx, uint32_t program, char *prog) {
       child->ctx.sp = child->tos - offset; // set the stack pointer to the top of the stack minus the offset from the parent
       child->age = 0; // set the age to 0 although this should still be 0 from when the process that is now the child was created
 
-      child->ctx.pc = program;
-      child->prog = prog;
+      child->ctx.pc = program; // set the program to the one passed in by the keyboard interrupt
+      child->prog = prog; // se the program descriptor
       // add one to the active number of processes
       num_procs += 1;
 }
@@ -523,58 +517,56 @@ extern void main_Philosophers();
 
 // this is the function for handling the timer and PS2 interrupts
 void hilevel_handler_irq(ctx_t* ctx) {
+
   // Step 2: read  the interrupt identifier so we know the source.
 
   uint32_t id = GICC0->IAR;
 
   // Step 4: handle the interrupt, then clear (or reset) the source.
 
-  if ( id == GIC_SOURCE_PS20 ) {
-    uint8_t bit_0 = PL050_getc( PS20 );
-    void* program;
-    char* prog;
-    if (bit_0 == 0x14) {
+  if     ( id == GIC_SOURCE_PS20 ) { // keyboard interrupts
+    uint8_t byte_0 = PL050_getc( PS20 ); // get the first byte of the keyboard input (when the user presses the key down)
+    // void* program;
+    // char* prog;
+    if (byte_0 == 0x14) { // 0x14 = 20 (i.e. t)
       killall();
     } 
-    // else { // me attempting to use a PS2 driver file in under $ARCHIVE/devices
+    // me attempting to use a PS2 driver file in under $ARCHIVE/devices
+
+    // else { 
     //   if( 0 == keyboard_interrupt(bit_0, program, prog) ) {
     //     fork_local(&executing->ctx, (uint32_t) program, prog);
     //   }
     // } 
-    else if (bit_0 == 0x04) {
+    else if (byte_0 == 0x04) { // 0x04 = 3
       fork_local(&executing->ctx,(uint32_t) &main_P3, "P3");
-    } else if (bit_0 == 0x05) {
+    } else if (byte_0 == 0x05) { // 0x05 = 4
       fork_local(&executing->ctx,(uint32_t) &main_P4, "P4");
-    } else if (bit_0 == 0x06) {
+    } else if (byte_0 == 0x06) { // 0x06 = 5
       fork_local(&executing->ctx,(uint32_t) &main_P5, "P5");
-    } else if (bit_0 == 0x19) {
+    } else if (byte_0 == 0x19) { // 0x19 = 25 (i.e. p)
       fork_local(&executing->ctx,(uint32_t) &main_Philosophers, "Ph");
     }
   }
-  if( id == GIC_SOURCE_PS21 ) { // handling the mouse interrupts 
-    uint8_t bit_0 = PL050_getc( PS21 );
-    uint8_t bit_1 = PL050_getc( PS21 );
-    uint8_t bit_2 = PL050_getc( PS21 );
-    if((bit_0 & 0x01) == 0x1) {
-      char s[10];
-      if(mouse.x >= 126 && mouse.y >= 562) {
-        if(mouse.x <= 150 && mouse.y <= 586) {
-          killall();
+  else if( id == GIC_SOURCE_PS21 ) { // handling the mouse interrupts 
+    uint8_t byte_0 = PL050_getc( PS21 ); // get the first byte with all the mouse info
+    uint8_t byte_1 = PL050_getc( PS21 ); // get the second byte for the x
+    uint8_t byte_2 = PL050_getc( PS21 ); // get the third byte for the y
+    if((byte_0 & 0x01) == 0x1) { // mouse left click
+      if(mouse.x >= 756 && mouse.y >= 20) { // check if the mouse is within the bounds of the X box
+        if(mouse.x <= 780 && mouse.y <= 44) {
+          killall(); // custom kill all command that kills and resets all processes
         }
       }
     }
     else {
       int old_x = mouse.x; int old_y = mouse.y; // we need to keep track of the old mouse coordinates so that we can draw black over it
-      mouse_interrupt(&mouse, bit_0, bit_1, bit_2 ); // this calls the mouse interrupt from the PS2 driver
+      mouse_interrupt(&mouse.x, &mouse.y, byte_0, byte_1, byte_2 ); // this calls the mouse interrupt from the PS2 driver
 
-      // int relative_x = bit_1 - ((bit_0 << 4) & 0x100 );
-      // int relative_y = bit_2 - ((bit_0 << 3) & 0x100 );
-      // mouse.x += relative_x; mouse.y -= relative_y;
-
-      // if(mouse.y >= mouse.y_max) mouse.y = mouse.y_max; // check the mouse position has not exceeded the boundaries of the screen
-      // else if(mouse.y <= mouse.y_min) mouse.y = mouse.y_min;
-      // if(mouse.x >= mouse.x_max) mouse.x = mouse.x_max;
-      // else if(mouse.x <= mouse.x_min) mouse.x = mouse.x_min;
+      if(mouse.y >= mouse.y_max) mouse.y = mouse.y_max; // check the mouse position has not exceeded the boundaries of the screen
+      else if(mouse.y <= mouse.y_min) mouse.y = mouse.y_min;
+      if(mouse.x >= mouse.x_max) mouse.x = mouse.x_max;
+      else if(mouse.x <= mouse.x_min) mouse.x = mouse.x_min;
 
       draw_char(cursor, old_x, old_y, 2, BLACK, BLACK); // draw out the old cursor
       
@@ -591,7 +583,7 @@ void hilevel_handler_irq(ctx_t* ctx) {
 
   }
 
-  if( id == GIC_SOURCE_TIMER0 ) {
+  if     ( id == GIC_SOURCE_TIMER0 ) {
     //PL011_putc( UART0, 'T', true );
     TIMER0->Timer1IntClr = 0x01;
     schedule(ctx); // if the timer caused the interrupt for the right reason we want to schedule the next process because the current process has finished its turn

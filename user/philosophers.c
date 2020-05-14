@@ -21,7 +21,7 @@ void runPhilosophers() {
         philosophers[i].left = &forks[(i) % NUM_PHIL]; //give each philosopher a left and a right fork corresponding to their position
         philosophers[i].right = &forks[(i + 1) % NUM_PHIL];
         cb = fork(); // call fork 16 times to spawn 16 processes
-        draw( 25 );
+        draw( 0x19 ); // give the 'Ph' descriptor
         if(cb != 0) {
             philosophers[i].pid = cb; // set the pid to the process pid which will be useful later
         }

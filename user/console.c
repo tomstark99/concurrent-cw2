@@ -57,16 +57,16 @@ void* load( char* x ) {
 
 int prog( char* x ) {
   if     ( 0 == strcmp( x, "P3" ) ) {
-    return 4;
+    return 0x04;
   }
   else if( 0 == strcmp( x, "P4" ) ) {
-    return 5;
+    return 0x05;
   }
   else if( 0 == strcmp( x, "P5" ) ) {
-    return 6;
+    return 0x06;
   }
   else if (0 == strcmp( x, "philosophers")) {
-    return 25; // I made sure to add another program the user could execute from the console calling it 'philosophers'
+    return 0x19; // I made sure to add another program the user could execute from the console calling it 'philosophers'
   }
   return -1;
 }

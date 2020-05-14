@@ -15,9 +15,9 @@
 #include "PL050.h"
 #include "PL111.h"
 #include   "SYS.h"
-#include "hilevel.h"
 
-extern void mouse_interrupt( mouse_t* mouse, uint8_t bit_0, uint8_t bit_1, uint8_t bit_2 );
-//extern int keyboard_interrupt( uint8_t bit_0, void* program, char* prog);
+// for handling mouse interrupts in the PS2 driver file
+extern void mouse_interrupt( int* x, int* y, uint8_t byte_0, uint8_t byte_1, uint8_t byte_2 );
+//extern int keyboard_interrupt( uint8_t byte_0, void* program, char* prog);
 
 #endif

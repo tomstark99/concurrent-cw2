@@ -148,7 +148,7 @@ void nice( int pid, int x ) {
   return;
 }
 
-// =============== for philosophers =====================
+// ===================== for philosophers ==========================
 
 int rand2( void ) {
   next = next * 234503515245 + 123456; // arbitrary manipulation of the seed
@@ -207,7 +207,7 @@ int kill_all( int x ) {
   int r;
 
   asm volatile( "mov r0, %2 \n" // assign r0 =    x
-                "svc %1     \n" // make system call SYS_KILL
+                "svc %1     \n" // make system call SYS_KILL_ALL
                 "mov %0, r0 \n" // assign r0 =    r
               : "=r" (r) 
               : "I" (SYS_KILL_ALL), "r" (x)
@@ -218,7 +218,7 @@ int kill_all( int x ) {
 
 void draw( int x ) {
   asm volatile( "mov r0, %1 \n" // assign r0 =  x
-                "svc %0     \n" // make system call SYS_EXIT
+                "svc %0     \n" // make system call SYS_DRAW
               :
               : "I" (SYS_DRAW), "r" (x)
               : "r0" );

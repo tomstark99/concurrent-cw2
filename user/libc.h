@@ -47,8 +47,9 @@ unsigned int next;
 #define SYS_NICE      ( 0x07 )
 // a system call to get the pid and therefore the philosopher number for indexing the philosopher in the IPC solution
 #define SYS_PHIL      ( 0x08 )
-
+// a system call for killing all processes
 #define SYS_KILL_ALL  ( 0x09 )
+// a system call for assigning a program descriptor to a process
 #define SYS_DRAW      ( 0x10 )
 
 #define SIG_TERM      ( 0x00 )
@@ -94,7 +95,6 @@ extern void wait( unsigned int c );
 // sem wait and sem post functions
 extern void sem_wait( void *s );
 extern void sem_post( void *s );
-
 // perform an interrupt to get the pid for the currently executing process
 extern int phil();
 
