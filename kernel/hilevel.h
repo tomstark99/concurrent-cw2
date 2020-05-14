@@ -27,6 +27,7 @@
 #include   "SYS.h"
 
 #include "font.h"
+#include "PS2.h"
 
 // Include functionality relating to the   kernel.
 
@@ -49,6 +50,9 @@
 
 #define MAX_PROCS 32 // 32 seemed like a good number for max processes e.g. because of the IPC mechanism showcase taking up 16 giving a comfortable amount of processes left for different programs
 #define BASE_PRIORITY 1 // defined but not used
+
+#define WIDTH 800
+#define HEIGHT 600
 
 typedef int pid_t;
 
@@ -82,7 +86,18 @@ typedef struct {
      ctx_t    ctx; // execution context
      pid_t    age;    // I added age and priority to the pcb struct so they could be easily accessed from within the kernel for the scheduling of the processes
      pid_t priority;
+     char *  prog;
 } pcb_t;
+
+typedef struct {
+    int x;
+    int y;
+    int scale;
+    int x_max;
+    int x_min;
+    int y_max;
+    int y_min;
+} mouse_t;
 
 #define NUM_WORDS 19
 
@@ -111,7 +126,7 @@ word_t words[NUM_WORDS] = {
   {"to run philosophers", 19, 200, 260, 2, BLACK, WHITE},
   {"these are the list of processes and the", 39, 30, 300, 2, BLACK, GREEN},
   {"program that are currently running", 34, 30, 330, 2, BLACK, GREEN},
-  {"press", 5, 30, 570, 2, BLACK, GREEN},
+  {"click", 5, 30, 570, 2, BLACK, GREEN},
   {"T", 1, 126, 562, 3, RED, WHITE},
   {"to terminate", 12, 166, 570, 2, BLACK, GREEN},
   {"ALL", 3, 374, 562, 3, RED, WHITE},
@@ -162,7 +177,7 @@ word_t exing[MAX_PROCS] = {
   {"  ", 2, 240, 420, 2, BLACK, WHITE},
   {"  ", 2, 280, 420, 2, BLACK, WHITE},
   {"  ", 2, 320, 420, 2, BLACK, WHITE},
-  {"  ", 1, 360, 420, 2, BLACK, WHITE},
+  {"  ", 2, 360, 420, 2, BLACK, WHITE},
   {"  ", 2, 400, 420, 2, BLACK, WHITE},
   {"  ", 2, 440, 420, 2, BLACK, WHITE},
   {"  ", 2, 480, 420, 2, BLACK, WHITE},

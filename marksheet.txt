@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : 70 to 100 hours
+effort : 100 hours
 
 -------------------------------------------------------------------------------
 
@@ -39,6 +39,9 @@ and unlocked 0 to unlocked 1
 
 The code for sem_wait and sem_post I found within the lecture slides for week 17
 page 7. Process management
+
+font for lcd
+https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h
 
 -------------------------------------------------------------------------------
 

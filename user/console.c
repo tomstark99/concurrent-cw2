@@ -55,6 +55,23 @@ void* load( char* x ) {
   return NULL;
 }
 
+int prog( char* x ) {
+  if     ( 0 == strcmp( x, "P3" ) ) {
+    return 4;
+  }
+  else if( 0 == strcmp( x, "P4" ) ) {
+    return 5;
+  }
+  else if( 0 == strcmp( x, "P5" ) ) {
+    return 6;
+  }
+  else if (0 == strcmp( x, "philosophers")) {
+    return 25; // I made sure to add another program the user could execute from the console calling it 'philosophers'
+  }
+  return -1;
+}
+
+
 /* The behaviour of a console process can be summarised as an infinite 
  * loop over three main steps, namely
  *
@@ -108,6 +125,7 @@ void main_console() {
       void* addr = load( cmd_argv[ 1 ] );
       if( addr != NULL ) {
         if( 0 == fork() ) {
+          draw(prog( cmd_argv[ 1 ] )); // for drawing the program on the LCD
           exec( addr );
         }
         else {
