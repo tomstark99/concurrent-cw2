@@ -21,17 +21,22 @@
  * - creates a variable to store a pointer to the currently executing process
  * - creates a variable to keep track of the active number of processes
  */
-pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL; int num_procs = 0;
 
+// ================================= kernel variables ==========================================
+
+pcb_t procTab[ MAX_PROCS ]; pcb_t* executing = NULL; int num_procs = 0;
 // create a reference to the program that we want to load into the process (so it can be used in this file)
 extern void     main_console();
-
 // create a reference to the top of stack for the 'user' programs that the processes will run which is defined in image.ld
 extern uint32_t tos_user;
-
-// initialise the mouse with starting coordinates, the scale it should be drawn at and the screen bounds placed on it
+/* initialise the mouse with starting coordinates, the scale it should be drawn at and the screen bounds placed on it
+ * the upper bounds are just the width - 10 and then minus the draw width/height of the mouse itself, because it
+ * is 8x8 with a scale of 2
+ */
 mouse_t mouse = { 10, 10, 2, (WIDTH-10)-(8*2), 10, (HEIGHT-10)-(8*2), 10 };
 uint16_t fb[ HEIGHT ][ WIDTH ]; // initialise the lcd pixel matrix
+
+// =========================== functions for kernel functionality ==============================
 
 // this function returns a pointer to the next 'available' process that has been marked as not in use
 pcb_t* getChildProcess(){
@@ -42,7 +47,6 @@ pcb_t* getChildProcess(){
   }
   return NULL; // if no process if found then return null which means that a fork can not be executed
 }
-
 // this is the function that returns the index of the process that has the highest priority (is to be executed next)
 int getPriority() {
   int priorityIndex; // a variable that changes in the for loop if a certain condition is met leaving the value we want
@@ -67,6 +71,8 @@ int getPriority() {
   return priorityIndex; // return the index that we have found
 }
 
+// =========================== functions for LCD functionality =================================
+
 // this function returns a description of the program depending on the keyboard input either through the console or the lcd
 char * get_prog( uint32_t p ) {
   if     ( 0x04 == p ) {
@@ -83,7 +89,6 @@ char * get_prog( uint32_t p ) {
   }
   return "  ";
 }
-
 // this function draws a single character on the lcd
 void draw_char(char *b, int x, int y, int scale, colour_t neg, colour_t pos) {
   int set;
@@ -105,7 +110,7 @@ void draw_char(char *b, int x, int y, int scale, colour_t neg, colour_t pos) {
     }
   }
 }
-
+// this function accepts a multiple character, sentence/word and calls draw_char appropriately
 void draw_string(char *s, int l, int x, int y, int scale, colour_t neg, colour_t pos) {
   for(int i = 0; i < l; i++) { // for however long the word is
 
@@ -115,16 +120,14 @@ void draw_string(char *s, int l, int x, int y, int scale, colour_t neg, colour_t
     draw_char(b, x_new, y, scale, neg, pos); // draw it
   }
 }
-
+// this function draws the processes and their programs on the LCD
 void re_draw_procs( uint32_t ex ) { // the processes and their status needs to be drawn every execution step
   for(int i = 0; i < MAX_PROCS; i++) {
     word_t w = procs[i];
     if(procTab[i].status != STATUS_TERMINATED) {
-      //if(procTab[i].pid != executing->pid) {
-        draw_string(w.word, w.length, w.x, w.y, w.scale, GREEN, w.pos); // if a process is not terminated then draw it in green
-      //}
+      draw_string(w.word, w.length, w.x, w.y, w.scale, GREEN, w.pos); // if a process is not terminated then draw it in green
     } else {
-        draw_string(w.word, w.length, w.x, w.y, w.scale, w.neg, w.pos); // else draw it in the default negative colour of red
+      draw_string(w.word, w.length, w.x, w.y, w.scale, w.neg, w.pos); // else draw it in the default negative colour of red
     }
     w = exing[i]; // next for each process draw the program it is executing
     draw_string(procTab[i].prog, w.length, w.x, w.y, w.scale, w.neg, w.pos); // here the string is used that is stored in the pcb_t struct.
@@ -132,6 +135,8 @@ void re_draw_procs( uint32_t ex ) { // the processes and their status needs to b
   word_t e = procs[ex]; // we also want to colour in the process that is currently executing to give a visual cue
   draw_string(e.word, e.length, e.x, e.y, e.scale, WHITE, BLACK); // this is coloured in with a negative colour of white
 }
+
+// =============================== default kernel functions =====================================
 
 // dispatch changes the executing processes from the previous to the next which is given by the schedule function
 void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
@@ -157,7 +162,6 @@ void dispatch( ctx_t* ctx, pcb_t* prev, pcb_t* next ) {
 
   return;
 }
-
 // this is the function that schedules a process to be executed (i.e. calls dispatch on it)
 void schedule( ctx_t* ctx ) {
   int priority = getPriority(); // using the function above get the index of the process to be scheduled
@@ -192,7 +196,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
   procTab[ 0 ].ctx.cpsr = 0x50;
   procTab[ 0 ].ctx.pc   = ( uint32_t )( &main_console );   // the program this process is executing is the main console 
   procTab[ 0 ].ctx.sp   = procTab[ 0 ].tos;                // the stack pointer for this program should be at the top of the stack of the process
-  procTab[ 0 ].priority = 1;                               // the base priority for this and all processes is 1
+  procTab[ 0 ].priority = BASE_PRIORITY;                   // the base priority for this and all processes is 1
   procTab[ 0 ].age      = 0;                               // the default age for this and all processes is 0
   procTab[ 0 ].prog     = "Cn"; // the program it is running in char form to display it on the lcd
 
@@ -206,7 +210,7 @@ void hilevel_handler_rst( ctx_t* ctx              ) {
     //procTab[ i ].ctx.pc   = ( uint32_t )( &main_console );    we dont allocate these processes a program to execute 
     procTab[ i ].ctx.sp   = procTab[ 0 ].tos - (i*0x00001000);  // the stack pointer for each of these is not the entry point for a program they are executing but instead the top of the stack allocated for that particular process, as the initial (0-th) process is right at the top we take away an increasing multiple of the stack space each process takes up (i.e. 0x00001000)
     procTab[ i ].tos      = procTab[ i ].ctx.sp;                // because we dont have an address for the top of stack for this process we set it to the stack pointer as this is the same
-    procTab[ i ].priority = 1;                                  // priority and age are the same as the 0-th process
+    procTab[ i ].priority = BASE_PRIORITY;                      // priority and age are the same as the 0-th process
     procTab[ i ].age      = 0;
     procTab[ i ].prog     = "  "; // for displaying on the lcd all the other processes do not have a process assigned to them
   }
@@ -336,7 +340,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       break;
     }
     
-    case 0x03 : { // fork aims to make a duplicate of a parent process called a child e.g. take one of the dummy processes and copy all of the execution state into it
+    case 0x03 : { // fork makes a duplicate of a parent process called a child e.g. take one of the dummy processes and copy all of the execution state into it
       // informs the qemu the fork syscall was successful
       PL011_putc( UART0, '[', true );
       PL011_putc( UART0, 'F', true );
@@ -444,6 +448,16 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
 
     case 0x09 : { // kill all
       // kill all lets us kill all processes at once from a user program, killing the 0-th process last and invoking a reset from the kernel
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'K', true );
+      PL011_putc( UART0, 'I', true );
+      PL011_putc( UART0, 'L', true );
+      PL011_putc( UART0, 'L', true );
+      PL011_putc( UART0, '_', true );
+      PL011_putc( UART0, 'A', true );
+      PL011_putc( UART0, 'L', true );
+      PL011_putc( UART0, 'L', true );
+      PL011_putc( UART0, ']', true );
       for(int i = 1; i < MAX_PROCS; i++) {
         procTab[i].status = STATUS_TERMINATED;
         procTab[i].ctx.sp = procTab[ 0 ].tos - (i*0x00001000);
@@ -453,7 +467,7 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
       procTab[0].status = STATUS_TERMINATED;
       procTab[0].ctx.sp = procTab[ 0 ].tos;
       procTab[0].prog = "  ";
-
+      num_procs = 0;
       ctx->gpr[0] = 0;
       break;
     }
@@ -471,8 +485,20 @@ void hilevel_handler_svc( ctx_t* ctx, uint32_t id ) {
   return;
 }
 
+// =============================== local interrupt functions ====================================
+
 // for killing all the processes
 void killall() {
+  PL011_putc( UART0, '[', true );
+  PL011_putc( UART0, 'K', true );
+  PL011_putc( UART0, 'I', true );
+  PL011_putc( UART0, 'L', true );
+  PL011_putc( UART0, 'L', true );
+  PL011_putc( UART0, '_', true );
+  PL011_putc( UART0, 'A', true );
+  PL011_putc( UART0, 'L', true );
+  PL011_putc( UART0, 'L', true );
+  PL011_putc( UART0, ']', true );
   for(int i = 1; i < MAX_PROCS; i++) { // first kill all the processes that are not the console
     procTab[i].status = STATUS_TERMINATED;
     procTab[i].ctx.sp = procTab[ 0 ].tos - (i*0x00001000);
@@ -482,14 +508,26 @@ void killall() {
   procTab[0].status = STATUS_TERMINATED; // kill the console so that hilevel_handler_rst is invoked
   procTab[0].ctx.sp = procTab[ 0 ].tos;
   procTab[0].prog = "  ";
+  num_procs = 0;
 }
-
 // this local (kernel) version of fork is nearly the exact same as the fork system call but without the r0 return values, it also performs the exec system call too
 void fork_local(ctx_t* ctx, uint32_t program, char *prog) {
-  pcb_t * child = getChildProcess(); // get the next available process that isn't currently being used
+      PL011_putc( UART0, '[', true );
+      PL011_putc( UART0, 'F', true );
+      PL011_putc( UART0, 'O', true );
+      PL011_putc( UART0, 'R', true );
+      PL011_putc( UART0, 'K', true );
+      PL011_putc( UART0, ']', true );
+      pcb_t * child = getChildProcess(); // get the next available process that isn't currently being used
 
       // if no free process is found getChildProcess() returns NULL and the kernel breaks out of the interrupt
       if(child == NULL) {
+        PL011_putc( UART0, '[', true );
+        PL011_putc( UART0, 'N', true );
+        PL011_putc( UART0, 'U', true );
+        PL011_putc( UART0, 'L', true );
+        PL011_putc( UART0, 'L', true );
+        PL011_putc( UART0, ']', true );
         return;
       }
       // copy the context of the parent process into the context of the child remembering to allocate it in memory

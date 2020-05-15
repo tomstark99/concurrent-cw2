@@ -85,6 +85,7 @@ extern int  kill( pid_t pid, int x );
 // for process identified by pid, set  priority to x
 extern void nice( pid_t pid, int x );
 
+// ================= for philosophers =====================
 
 // a custom random function that uses a seed based off the timer that runs in the kernel
 extern int rand2();
@@ -98,6 +99,7 @@ extern void sem_post( void *s );
 // perform an interrupt to get the pid for the currently executing process
 extern int phil();
 
+// ====================== for LCD =========================
 
 extern void draw( int x );
 extern int  kill_all( int x );

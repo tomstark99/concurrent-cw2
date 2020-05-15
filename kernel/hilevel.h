@@ -26,14 +26,19 @@
 #include "PL111.h"
 #include   "SYS.h"
 
-#include "font.h"
+// include device drivers
+
 #include "PS2.h"
 
 // Include functionality relating to the   kernel.
 
 #include "lolevel.h"
 #include     "int.h"
-#include "philosophers.h"
+#include    "font.h"
+
+// include functionality for srand
+
+#include "libc.h"
 
 /* The kernel source code is made simpler and more consistent by using
  * some human-readable type definitions:
@@ -49,7 +54,7 @@
  */
 
 #define MAX_PROCS 32 // 32 seemed like a good number for max processes e.g. because of the IPC mechanism showcase taking up 16 giving a comfortable amount of processes left for different programs
-#define BASE_PRIORITY 1 // defined but not used
+#define BASE_PRIORITY 1 // the base priority for the processes
 
 typedef int pid_t;
 
