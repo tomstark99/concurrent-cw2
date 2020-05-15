@@ -30,7 +30,7 @@
 
 #include "PS2.h"
 
-// Include functionality relating to the   kernel.
+// Include functionality relating to the kernel.
 
 #include "lolevel.h"
 #include     "int.h"
@@ -124,7 +124,7 @@ word_t words[NUM_WORDS] = {
   {"tom", 3, 320, 20, 3, BLACK, WHITE},
   {"OS", 2, 400, 12, 4, RED, WHITE},
   {"press the corresponding key for the program", 43, 40, 70, 2, BLACK, GREEN},
-  {"you would like to execute", 25, 40, 100, 2, BLACK, GREEN},
+  {"you would like to run, or mouse click it", 40, 40, 100, 2, BLACK, GREEN},
   {"3", 1, 150, 140, 3, BLUE, WHITE},
   {"4", 1, 150, 180, 3, BLUE, WHITE},
   {"5", 1, 150, 220, 3, BLUE, WHITE},

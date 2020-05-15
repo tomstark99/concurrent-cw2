@@ -59,9 +59,13 @@ As the LCD should say there are 5 possible keyboard commands
 - `P` will execute the program `philosophers`
 - `T` will terminate all processes and reset the kernel
 
+(note running this on a mac e.g. through ssh with X forwarding gives an unknown keycodes error because of the non-standard format the corresponding keys therefore are `H` = `3`, `G` = `4`, `Z` = `5` and `9` = `P`)
+
 ### Mouse Operation
 
 The cursor is moveable (albeit with some patience). Clicking the LCD will now capture mouse and keyboard interrupts, therefore clicking the LCD at a point close to the drawn cursor is preferable. The cursor can be moved along the screen and when positioned over the X in the top right corner, all processes will be terminated and the kernel will reset.
+
+Clicking the blue buttons for the programs will also execute them.
 
 ### Console operation
 

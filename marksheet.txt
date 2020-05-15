@@ -137,7 +137,9 @@ were within the screen bounds I had assigned and then, drew over the old mouse w
 graphical elements that had been destroyed by the mouse movement e.g. +- 25 in the y-axis of where
 the mouse is and then drew the mouse back on the screen. As for registering a left click, this
 was easy and like with a keyboard press I called my kill all function once I had verified that
-the mouse coordinates were within the bounds of the button I had set.
+the mouse coordinates were within the bounds of the button I had set. I also did this for
+executing programs with a mouse click, by clicking the blue buttons for the corresponding
+program.
 
 I feel I have successfully demonstrated the use of a graphical user interface and
 provided the ability to perform actions of the operating system (previously only possible through

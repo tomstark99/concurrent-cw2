@@ -595,6 +595,26 @@ void hilevel_handler_irq(ctx_t* ctx) {
         if(mouse.x <= 780 && mouse.y <= 44) {
           killall(); // custom kill all command that kills and resets all processes
         }
+      } // the mouse can also execute the programs by clicking the blue button
+      if(mouse.x >= 150 && mouse.y >= 140) {
+        if(mouse.x <= 174 && mouse.y <= 164) {
+          fork_local(&executing->ctx,(uint32_t) &main_P3, "P3");
+        }
+      }
+      if(mouse.x >= 150 && mouse.y >= 180) {
+        if(mouse.x <= 174 && mouse.y <= 204) {
+          fork_local(&executing->ctx,(uint32_t) &main_P4, "P4");
+        }
+      }
+      if(mouse.x >= 150 && mouse.y >= 220) {
+        if(mouse.x <= 174 && mouse.y <= 244) {
+          fork_local(&executing->ctx,(uint32_t) &main_P5, "P5");
+        }
+      }
+      if(mouse.x >= 150 && mouse.y >= 260) {
+        if(mouse.x <= 174 && mouse.y <= 284) {
+          fork_local(&executing->ctx,(uint32_t) &main_Philosophers, "Ph");
+        }
       }
     }
     else {
