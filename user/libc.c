@@ -123,16 +123,6 @@ void exec( const void* x ) {
   return;
 }
 
-int phil() {
-  int r; // creates a variable r to store the register value (pid)
-  asm volatile( "svc %1     \n" // make system call SYS_PHIL
-                "mov %0, r0 \n" // assign r = r0
-              : "=r" (r) 
-              : "I" (SYS_PHIL)
-              : "r0" );
-  return r;
-}
-
 int  kill( int pid, int x ) {
   int r;
 
@@ -147,19 +137,6 @@ int  kill( int pid, int x ) {
   return r;
 }
 
-int kill_all( int x ) {
-  int r;
-
-  asm volatile( "mov r0, %2 \n" // assign r0 =    x
-                "svc %1     \n" // make system call SYS_KILL
-                "mov %0, r0 \n" // assign r0 =    r
-              : "=r" (r) 
-              : "I" (SYS_KILL_ALL), "r" (x)
-              : "r0" );
-
-  return r;
-}
-
 void nice( int pid, int x ) {
   asm volatile( "mov r0, %1 \n" // assign r0 =  pid
                 "mov r1, %2 \n" // assign r1 =    x
@@ -170,6 +147,8 @@ void nice( int pid, int x ) {
 
   return;
 }
+
+// ===================== for philosophers ==========================
 
 int rand2( void ) {
   next = next * 234503515245 + 123456; // arbitrary manipulation of the seed
@@ -209,5 +188,40 @@ void sem_post( void *s ) {
                 "bne sem_post       \n" // if r != 0, retry       if it is not equal to zero then the program is no longer allowed to access the critical section
                 "dmb                \n" // memory barrier         makes sure the above is observed before any memory is accessed
                 "bx lr              \n"); // return
+  return;
+}
+
+int phil() {
+  int r; // creates a variable r to store the register value (pid)
+  asm volatile( "svc %1     \n" // make system call SYS_PHIL
+                "mov %0, r0 \n" // assign r = r0
+              : "=r" (r) 
+              : "I" (SYS_PHIL)
+              : "r0" );
+  return r;
+}
+
+// ========================== for LCD =============================
+
+int kill_all( int x ) {
+  int r;
+
+  asm volatile( "mov r0, %2 \n" // assign r0 =    x
+                "svc %1     \n" // make system call SYS_KILL_ALL
+                "mov %0, r0 \n" // assign r0 =    r
+              : "=r" (r) 
+              : "I" (SYS_KILL_ALL), "r" (x)
+              : "r0" );
+
+  return r;
+}
+
+void draw( int x ) {
+  asm volatile( "mov r0, %1 \n" // assign r0 =  x
+                "svc %0     \n" // make system call SYS_DRAW
+              :
+              : "I" (SYS_DRAW), "r" (x)
+              : "r0" );
+
   return;
 }
