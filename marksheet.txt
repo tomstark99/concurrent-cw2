@@ -16,7 +16,7 @@
 So that we can calibrate and improve the assignment in the future, give us
 a rough idea how long (in hours) you spent on it *in total*:
 
-effort : 100 hours
+effort : [100+ hours]
 
 -------------------------------------------------------------------------------
 
@@ -31,17 +31,14 @@ resources is allowed *iff.* it
 Let us know any third-party source code or resources you used (if any) so
 it's clear what's your work and what isn't:
 
-The code for the mutex_lock and mutex_unlock assesmbly functions I found here
+[The code for the mutex_lock and mutex_unlock assesmbly functions I found here
 https://stackoverflow.com/a/20115886
 I changed the name from lock_mutex to mutex_lock and unlock_mutex to mutex_unlock
 I also changed the default values from locked being 1 to locked being 0
 and unlocked 0 to unlocked 1
 
-The code for sem_wait and sem_post I found within the lecture slides for week 17
-page 7. Process management
-
-font for lcd
-https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h
+font used for my lcd, just the font8x8_basic.h file:
+https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h]
 
 -------------------------------------------------------------------------------
 
@@ -67,7 +64,7 @@ are not (necessarily) detailed explicitly.
     Stage 3 : open   generalisations and enhancements                ( 30%)
 [?]           - MMU-based protection and virtualisation
                 *OR*
-[?]           - LCD screen and PS/2 device drivers and GUI
+[X]           - LCD screen and PS/2 device drivers and GUI
                 *OR*
 [?]           - file system based on simplified, emulated disk
                 *OR*
@@ -84,8 +81,72 @@ Any other documentation, notes or comments that you think are important or
 might be easy to overlook (e.g., a subtle issue or technique in associated
 source code) should go here:
 
-Most of the relevant documentation for the source code is written as comments within
+[Most of the relevant documentation for the source code is written as comments within
 the source code itself
+
+Since I appreciate what I have written below may be over the top to try and explain
+my understanding of this coursework, I will start by writing about stage 3 since
+I feel this is most important to talk about, not being confined to strict implementation:
+
+---------STAGE 3---------
+
+After completing lab 6 I felt I had an understanding of how the LCD worked and how this
+could be used to display an intuitive graphical user interface. I took inspiration from
+the lab 6 code and quickly had the same setup of the RGB band LCD running in my coursework.
+I found a simple open source 8x8 font on github which I have used to draw my letters.
+
+each character is encoded in 8 bytes, one for each pixel row. these bytes are right shifted
+8 times in increasing amounts for each pixel row for that column to see if the pixel should
+be coloured in or not, 1 for yes 0 for no.
+
+I developed my own way of scaling these characters e.g. a scaling factor of 2 would result in
+a 16x16 pixel character where one 'pixel' of the character was just an inflated 2x2 pixel from
+the original 8x8 character. I created a function for drawing characters and then drawing strings
+which just drew characters next to each other with the appropriate scale increment.
+
+I created a word struct that could hold a sentence on a single line with the length, starting
+coordinates and colour which made it easy to print everything I wanted without much code.
+
+These printed on the LCD without much problem so the next stage was displaying something more
+complicated. I wanted to display all the processes and their current execution status e.g.
+terminated or active or executing, and a bonus being which program they were executing.
+
+I created an array of processes that could be printed and programatically changing their colour
+in the schedule function depending on their state in the procTab array.
+
+Now I wanted to execute programs by keyboard input on the lcd. I had my keyboard and mouse
+interrupts set up but I struggled to find a way to correctly implement the interrupt handling
+(i.e. through a driver file) and the execution of a process. Since the only way a fork or
+exec system call can be made was through a user program I saw no other option than to copy
+the fork and exec code into a separate function within the kernel that they interrupt handler
+could call.
+
+I tried to implement a driver file, called PS2.c which you can still find in my devices folder.
+This proved to be trickier than I thought since passing the address of the entry points to
+the programs proved to be impossible. The problem was the addresses seemed to change when passing
+from the PS2 file back to the kernel. Even though I was using the void* type for the pointer
+
+Because of this I gave up and had the logic for calling my local for function directly in the
+interrupt handler, using the scan codes in if statements to determine if the button I needed
+had been pressed.
+
+I had more success with the mouse interrupt in my driver file, I was able to pass pointers of my
+mouse's current x and y coordinates to the PS2 file and update the pointer values with the byte
+information coming from the mouse interrupt. From this I checked if the new mouse x and y coordinates
+were within the screen bounds I had assigned and then, drew over the old mouse with black, redrew any
+graphical elements that had been destroyed by the mouse movement e.g. +- 25 in the y-axis of where
+the mouse is and then drew the mouse back on the screen. As for registering a left click, this
+was easy and like with a keyboard press I called my kill all function once I had verified that
+the mouse coordinates were within the bounds of the button I had set. I also did this for
+executing programs with a mouse click, by clicking the blue buttons for the corresponding
+program.
+
+I feel I have successfully demonstrated the use of a graphical user interface and
+provided the ability to perform actions of the operating system (previously only possible through
+the console) in a simplified and somewhat user friendly way using the keyboard and mouse
+input devices.
+
+---------STAGE 1---------
 
 I have used a priority-based scheduler to schedule the processes, these are created
 in a for loop where up to a specified MAX_PROCS which I have chosen to be 32.
@@ -109,6 +170,8 @@ of the programs the processes are running i.e. the program does not need to invo
 the yield system call in order for the next process to be scheduled, it will be
 scheduled automatically via the timer interrupt. Each process runs for approximately
 1 second before the next is executed.
+
+---------STAGE 2a---------
 
 The main console accepts two commands, 'execute' and 'terminate'
 
@@ -177,6 +240,8 @@ whereas if you terminate it while there are other processes active then the stat
 of the main console process will be turned to STATUS_TERMINATED and it cannot be scheduled
 again, hilevel_handler_rst is only invoked when there are no active processes.
 
+---------STAGE 2b---------
+
 For Stage 2b to show how IPC worked I elected to use semaphores (with an additional implementation
 with mutexes) to solve the dining philosophers’ program. Because I had more than one solution for
 the IPC problem, the program that called fork 16 times was not the same program that
@@ -238,7 +303,7 @@ of the waiter and the wait times between the solutions or the way I implemented 
 simply worked differently and better.
 
 By default I have left the solution that uses semaphores to execute since this is the more 
-generic IPC implementation, in my opinion though the mutex solution works much better.
+generic IPC implementation, in my opinion though the mutex solution works much better.]
 
 
 -------------------------------------------------------------------------------

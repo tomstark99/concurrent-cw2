@@ -10,5 +10,3 @@
 #include "libc.h"
 
 #endif
-
-

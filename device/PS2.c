@@ -62,7 +62,7 @@ void mouse_interrupt( int *x, int *y, uint8_t byte_0, uint8_t byte_1, uint8_t by
     return;
 }
 
-// doesnt work, the address for the programs had changed once it had been assigned to the program pointer and executed in the kernel
+// doesn't work, the address for the programs had changed once it had been assigned to the program pointer and executed in the kernel
 int keyboard_interrupt( uint8_t byte_0, void* program, char *prog) {
     program = load_addr( byte_0 );
     prog = program_name( byte_0 );
