@@ -31,7 +31,7 @@ resources is allowed *iff.* it
 Let us know any third-party source code or resources you used (if any) so
 it's clear what's your work and what isn't:
 
-[The code for the mutex_lock and mutex_unlock assesmbly functions I found here
+[The code for the mutex_lock and mutex_unlock assembly functions I found here
 https://stackoverflow.com/a/20115886
 I changed the name from lock_mutex to mutex_lock and unlock_mutex to mutex_unlock
 I also changed the default values from locked being 1 to locked being 0
@@ -253,7 +253,7 @@ and used the sem_wait and sem_post functions from the lecture slides.
 
 semaphore solution:
 I created a new struct for a philosopher which contained, its pid within the main.
-I also created a new definition for a genereic mutex that can be used for generic IPC
+I also created a new definition for a generic mutex that can be used for generic IPC
 kernels processes, the current status, the number of times a philosopher had eaten and 
 two pointers (one to left fork and one to right fork) I then created an array of 
 philosophers of the given size (16) and also had an array of semaphores the same size 
